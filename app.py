@@ -29,12 +29,12 @@ with st.sidebar:
         "Select Active Feature",
         [
             "📚 NCERT Textbook Reader (Class 9–12)",
-            "📸 Notebook Error & Socratic Hint Inspector"
+            "📸 Multi-Question Socratic Hint Inspector"
         ]
     )
     st.markdown("---")
     if not client:
-        st.warning("⚠️ GEMINI_API_KEY not found in secrets/env. Notebook Inspector needs it for vision analysis.")
+        st.warning("⚠️ GEMINI_API_KEY not found in secrets/env. Vision inspector needs it.")
 
 NCERT_FULL_DATABASE = {
     "Class 12": {
@@ -217,50 +217,49 @@ if active_feature == "📚 NCERT Textbook Reader (Class 9–12)":
                     unsafe_allow_html=True
                 )
 
-elif active_feature == "📸 Notebook Error & Socratic Hint Inspector":
-    st.subheader("📸 Notebook Error & Socratic Hint Inspector")
-    st.caption("Upload or click a live photo of your handwritten math/physics step. AI detects errors and gives a Socratic hint with automatic retry if busy.")
+elif active_feature == "📸 Multi-Question Socratic Hint Inspector":
+    st.subheader("📸 Multi-Question Socratic Hint Engine")
+    st.caption("Upload or snap a photo of a worksheet. Gemini detects every single question and provides core concepts and Socratic steering hints.")
 
-    input_mode = st.radio("Choose Input Mode", ["📁 Upload Image File", "📷 Capture via Camera"], horizontal=True)
-    uploaded_img = None
-
-    if input_mode == "📁 Upload Image File":
-        uploaded_img = st.file_uploader("Upload Notebook Photo", type=["png", "jpg", "jpeg"])
-    else:
-        uploaded_img = st.camera_input("Take a photo of your notebook")
-
-    user_context = st.text_input("Optional context (e.g., 'Stuck on line 3, derivation of rotational kinetic energy')", "")
+    uploaded_img = st.file_uploader(
+        "Upload or snap a photo of your notebook/worksheet", 
+        type=["png", "jpg", "jpeg"]
+    )
+    user_context = st.text_input("Optional context (e.g., 'Class 11 rotational dynamics sheet', or leave blank)", "")
 
     if uploaded_img:
         col_img, col_diag = st.columns([1, 1], gap="large")
         with col_img:
             image = Image.open(uploaded_img)
-            st.image(image, caption="Your Notebook Snapshot", use_container_width=True)
+            image.thumbnail((1600, 1600))
+            st.image(image, caption="Your Snapshot", use_container_width=True)
 
         with col_diag:
-            if st.button("🔍 Analyze Notebook & Find Blunders", type="primary"):
+            if st.button("💡 Give Hints for Every Question", type="primary"):
                 if not client:
                     st.error("Gemini client not initialized. Check your GEMINI_API_KEY secret.")
                 else:
-                    INSPECTION_PROMPT = f"""
-You are an expert Socratic STEM tutor. Look at this student's handwritten notebook page.
+                    HINT_PROMPT = f"""
+You are an expert JEE Main/Advanced & Board STEM tutor. Analyze this uploaded image containing multiple questions/problems.
 User context: {user_context}
 
-Analyze the work and output clearly structured markdown with:
-1. **Detected Problem / Goal**: What question/derivation is the student attempting?
-2. **Step-by-Step Breakdown**: What looks right so far?
-3. **The Blunder / Error**: Point out exact sign slips, algebra mistakes, unit mismatch, or conceptual limits violated.
-4. **Socratic Nudge / Hint**: Give a conceptual steering question/hint *without* spoiling the final line answer immediately.
+Instructions:
+1. Detect **every single question, sub-question, or problem** visible in the image.
+2. For *every single question*, output:
+   - **Q[No.]: [Short summary/transcription]**
+   - **Key Concept / Formula**: [Formula name or expression needed]
+   - **Socratic Hint**: [Guiding question to trigger insight]
+   - **First Kickstart Step**: [Exact first line/setup to begin solving]
 """
                     max_retries = 3
-                    with st.spinner("Inspecting handwritten math/physics logic..."):
+                    with st.spinner("Generating multi-question Socratic hints..."):
                         for attempt in range(max_retries):
                             try:
                                 response = client.models.generate_content(
-                                    model='gemini-3.6-flash',
-                                    contents=[image, INSPECTION_PROMPT]
+                                    model='gemini-2.5-flash',
+                                    contents=[image, HINT_PROMPT]
                                 )
-                                st.markdown("### 🧠 Diagnostic Report")
+                                st.markdown("### 💡 Multi-Question Hint Guide")
                                 st.markdown(response.text)
                                 break
                             except Exception as e:
