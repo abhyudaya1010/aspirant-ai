@@ -220,7 +220,7 @@ if active_feature == "📚 NCERT Textbook Reader (Class 9–12)":
 
 elif active_feature == "📸 Multi-Question Socratic Hint Inspector":
     st.subheader("📸 Multi-Question Socratic Hint Engine")
-    st.caption("Upload or snap a photo of a worksheet. Gemini detects every single question and provides core concepts and Socratic steering hints.")
+    st.caption("Upload or snap a photo of a worksheet, or drop down to zero-saturation text fallback.")
 
     uploaded_img = st.file_uploader(
         "Upload or snap a photo of your notebook/worksheet", 
@@ -257,38 +257,46 @@ Instructions:
                     image.save(buffered, format="JPEG", quality=85)
                     compressed_bytes = buffered.getvalue()
 
-                    models_to_try = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
+                    models_to_try = ['gemini-2.5-flash', 'gemini-2.0-flash']
                     response = None
                     success = False
                     
-                    with st.spinner("Compressing payload & routing across flash clusters..."):
-                        for round_idx in range(2):
-                            for model_name in models_to_try:
-                                try:
-                                    response = client.models.generate_content(
-                                        model=model_name,
-                                        contents=[
-                                            types.Part.from_bytes(data=compressed_bytes, mime_type="image/jpeg"),
-                                            HINT_PROMPT
-                                        ]
-                                    )
-                                    st.markdown(f"### 💡 Multi-Question Hint Guide (via `{model_name}`)")
-                                    st.markdown(response.text)
-                                    success = True
-                                    break
-                                except Exception as e:
-                                    err_str = str(e)
-                                    if any(code in err_str for code in ["503", "UNAVAILABLE", "429", "RESOURCE_EXHAUSTED"]):
-                                        time.sleep(1.0 + (round_idx * 1.5))
-                                        continue
-                                    elif any(code in err_str for code in ["404", "NOT_FOUND"]):
-                                        break
-                                    else:
-                                        st.warning(f"Model `{model_name}` glitch: {e}")
-                                        break
-                            if success:
+                    with st.spinner("Routing across flash clusters..."):
+                        for model_name in models_to_try:
+                            try:
+                                response = client.models.generate_content(
+                                    model=model_name,
+                                    contents=[
+                                        types.Part.from_bytes(data=compressed_bytes, mime_type="image/jpeg"),
+                                        HINT_PROMPT
+                                    ]
+                                )
+                                st.markdown(f"### 💡 Multi-Question Hint Guide (via `{model_name}`)")
+                                st.markdown(response.text)
+                                success = True
                                 break
-                            time.sleep(2)
+                            except Exception as e:
+                                continue
                                 
-                        if not success:
-                            st.error("⚠️ Public tier regional pool saturated. Crop the photo to 3–4 questions max or retry in 15 seconds.")
+                    if not success:
+                        st.warning("⚠️ Vision pool saturated (503). Use the text fallback box below—zero rate limit queue locks!")
+
+    # Instant Text-Fallback Box (Bypasses vision 503s completely)
+    with st.expander("⚡ Text/Manual Question Fallback (Zero Saturation)", expanded=not uploaded_img):
+        pasted_text = st.text_area("Paste question text here if photo upload saturates:", placeholder="e.g., 1. A block of mass 2kg slides down a 30° incline...")
+        if st.button("🚀 Get Hints from Text", type="secondary"):
+            if not client:
+                st.error("API key missing.")
+            elif not pasted_text.strip():
+                st.warning("Please paste a question first.")
+            else:
+                with st.spinner("Generating socratic breakdown via text engine..."):
+                    try:
+                        res = client.models.generate_content(
+                            model="gemini-2.0-flash",
+                            contents=f"Context: {user_context}\n\nQuestions/Problems:\n{pasted_text}\n\nProvide for each question: Key Concept/Formula, Socratic Hint, and First Kickstart Step."
+                        )
+                        st.markdown("### 💡 Socratic Hint Guide")
+                        st.markdown(res.text)
+                    except Exception as e:
+                        st.error(f"Error: {e}")
