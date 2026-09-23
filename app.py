@@ -251,21 +251,34 @@ Instructions:
    - **Socratic Hint**: [Guiding question to trigger insight]
    - **First Kickstart Step**: [Exact first line/setup to begin solving]
 """
-                    max_retries = 3
-                    with st.spinner("Generating multi-question Socratic hints..."):
-                        for attempt in range(max_retries):
-                            try:
-                                response = client.models.generate_content(
-                                    model='gemini-3.6-flash',
-                                    contents=[image, HINT_PROMPT]
-                                )
-                                st.markdown("### 💡 Multi-Question Hint Guide")
-                                st.markdown(response.text)
-                                break
-                            except Exception as e:
-                                if "503" in str(e) and attempt < max_retries - 1:
-                                    time.sleep(2 * (attempt + 1))
-                                    continue
-                                else:
-                                    st.error(f"Analysis failed after retries: {e}")
+                    models_to_try = ['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-2.0-flash']
+                    response = None
+                    success = False
+                    
+                    with st.spinner("Connecting to vision engine with model fallback rotation..."):
+                        for model_name in models_to_try:
+                            for attempt in range(2):
+                                try:
+                                    response = client.models.generate_content(
+                                        model=model_name,
+                                        contents=[image, HINT_PROMPT]
+                                    )
+                                    st.markdown(f"### 💡 Multi-Question Hint Guide (via `{model_name}`)")
+                                    st.markdown(response.text)
+                                    success = True
                                     break
+                                except Exception as e:
+                                    err_str = str(e)
+                                    if ("503" in err_str or "UNAVAILABLE" in err_str) and attempt < 1:
+                                        time.sleep(3)
+                                        continue
+                                    elif "404" in err_str or "NOT_FOUND" in err_str:
+                                        break  # Try next model in list
+                                    else:
+                                        st.warning(f"Model `{model_name}` glitch: {e}")
+                                        break
+                            if success:
+                                break
+                                
+                        if not success:
+                            st.error("⚠️ All fallback models are under heavy traffic spike (503). Wait 5 seconds and click the button again.")
