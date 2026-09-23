@@ -6,6 +6,7 @@ if sys.platform.startswith("win"):
 import os
 import io
 import time
+import random
 from PIL import Image
 import streamlit as st
 from google import genai
@@ -251,13 +252,13 @@ Instructions:
    - **Socratic Hint**: [Guiding question to trigger insight]
    - **First Kickstart Step**: [Exact first line/setup to begin solving]
 """
-                    models_to_try = ['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-2.0-flash']
+                    models_to_try = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-3.5-flash']
                     response = None
                     success = False
                     
-                    with st.spinner("Connecting to vision engine with model fallback rotation..."):
+                    with st.spinner("Connecting to vision engine with exponential backoff & rotation..."):
                         for model_name in models_to_try:
-                            for attempt in range(2):
+                            for attempt in range(3):
                                 try:
                                     response = client.models.generate_content(
                                         model=model_name,
@@ -269,11 +270,12 @@ Instructions:
                                     break
                                 except Exception as e:
                                     err_str = str(e)
-                                    if ("503" in err_str or "UNAVAILABLE" in err_str) and attempt < 1:
-                                        time.sleep(3)
+                                    if any(code in err_str for code in ["503", "UNAVAILABLE", "429"]):
+                                        wait_time = (2 ** attempt) + random.uniform(0.3, 1.0)
+                                        time.sleep(wait_time)
                                         continue
-                                    elif "404" in err_str or "NOT_FOUND" in err_str:
-                                        break  # Try next model in list
+                                    elif any(code in err_str for code in ["404", "NOT_FOUND"]):
+                                        break
                                     else:
                                         st.warning(f"Model `{model_name}` glitch: {e}")
                                         break
@@ -281,4 +283,4 @@ Instructions:
                                 break
                                 
                         if not success:
-                            st.error("⚠️ All fallback models are under heavy traffic spike (503). Wait 5 seconds and click the button again.")
+                            st.error("⚠️ All regional fallback pools hit saturation. Click the button once more to rotate cluster routing.")
