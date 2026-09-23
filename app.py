@@ -252,17 +252,25 @@ Instructions:
    - **Socratic Hint**: [Guiding question to trigger insight]
    - **First Kickstart Step**: [Exact first line/setup to begin solving]
 """
-                    models_to_try = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-3.5-flash']
+                    image.thumbnail((1024, 1024))
+                    buffered = io.BytesIO()
+                    image.save(buffered, format="JPEG", quality=85)
+                    compressed_bytes = buffered.getvalue()
+
+                    models_to_try = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
                     response = None
                     success = False
                     
-                    with st.spinner("Connecting to vision engine with exponential backoff & rotation..."):
-                        for model_name in models_to_try:
-                            for attempt in range(3):
+                    with st.spinner("Compressing payload & routing across flash clusters..."):
+                        for round_idx in range(2):
+                            for model_name in models_to_try:
                                 try:
                                     response = client.models.generate_content(
                                         model=model_name,
-                                        contents=[image, HINT_PROMPT]
+                                        contents=[
+                                            types.Part.from_bytes(data=compressed_bytes, mime_type="image/jpeg"),
+                                            HINT_PROMPT
+                                        ]
                                     )
                                     st.markdown(f"### 💡 Multi-Question Hint Guide (via `{model_name}`)")
                                     st.markdown(response.text)
@@ -270,9 +278,8 @@ Instructions:
                                     break
                                 except Exception as e:
                                     err_str = str(e)
-                                    if any(code in err_str for code in ["503", "UNAVAILABLE", "429"]):
-                                        wait_time = (2 ** attempt) + random.uniform(0.3, 1.0)
-                                        time.sleep(wait_time)
+                                    if any(code in err_str for code in ["503", "UNAVAILABLE", "429", "RESOURCE_EXHAUSTED"]):
+                                        time.sleep(1.0 + (round_idx * 1.5))
                                         continue
                                     elif any(code in err_str for code in ["404", "NOT_FOUND"]):
                                         break
@@ -281,6 +288,7 @@ Instructions:
                                         break
                             if success:
                                 break
+                            time.sleep(2)
                                 
                         if not success:
-                            st.error("⚠️ All regional fallback pools hit saturation. Click the button once more to rotate cluster routing.")
+                            st.error("⚠️ Public tier regional pool saturated. Crop the photo to 3–4 questions max or retry in 15 seconds.")
