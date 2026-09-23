@@ -1,7 +1,10 @@
 import sys
 import asyncio
 if sys.platform.startswith("win"):
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    try:
+        asyncio.get_event_loop_policy()
+    except Exception:
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 import os
 import io
@@ -14,6 +17,7 @@ from google.genai import types
 
 st.set_page_config(page_title="Aspirant AI", layout="wide")
 
+# Safe client initialization
 try:
     api_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
 except Exception:
@@ -35,7 +39,7 @@ with st.sidebar:
     )
     st.markdown("---")
     if not client:
-        st.warning("⚠️ GEMINI_API_KEY not found in secrets/env. Vision inspector needs it.")
+        st.warning("⚠️ GEMINI_API_KEY not found in secrets/env. AI features require it.")
 
 NCERT_FULL_DATABASE = {
     "Class 12": {
@@ -193,6 +197,17 @@ NCERT_FULL_DATABASE = {
     }
 }
 
+HINT_SYSTEM_PROMPT = """
+You are an expert JEE Main/Advanced & Board STEM tutor. Analyze the provided problems.
+Instructions:
+1. Detect **every single question, sub-question, or problem**.
+2. For *every single question*, output:
+   - **Q[No.]: [Short summary/transcription]**
+   - **Key Concept / Formula**: [Formula name or expression needed]
+   - **Socratic Hint**: [Guiding question to trigger insight]
+   - **First Kickstart Step**: [Exact first line/setup to begin solving]
+"""
+
 if active_feature == "📚 NCERT Textbook Reader (Class 9–12)":
     st.subheader("📖 Official NCERT Textbook Portal")
     col_c, col_s = st.columns([1, 1], gap="medium")
@@ -220,83 +235,76 @@ if active_feature == "📚 NCERT Textbook Reader (Class 9–12)":
 
 elif active_feature == "📸 Multi-Question Socratic Hint Inspector":
     st.subheader("📸 Multi-Question Socratic Hint Engine")
-    st.caption("Upload or snap a photo of a worksheet, or drop down to zero-saturation text fallback.")
+    st.caption("Upload a photo OR paste question text directly. Zero saturation mode included.")
 
-    uploaded_img = st.file_uploader(
-        "Upload or snap a photo of your notebook/worksheet", 
-        type=["png", "jpg", "jpeg"]
-    )
-    user_context = st.text_input("Optional context (e.g., 'Class 11 rotational dynamics sheet', or leave blank)", "")
+    user_context = st.text_input("Optional context (e.g., 'Class 11 rotational dynamics sheet')", "")
+    
+    input_mode = st.radio("Choose Input Mode", ["🖼️ Image Upload", "✍️ Direct Text / Paste (Zero 503s)"], horizontal=True)
 
-    if uploaded_img:
-        col_img, col_diag = st.columns([1, 1], gap="large")
-        with col_img:
-            image = Image.open(uploaded_img)
-            image.thumbnail((1600, 1600))
-            st.image(image, caption="Your Snapshot", use_container_width=True)
+    if not client:
+        st.error("Gemini client not initialized. Check your GEMINI_API_KEY secret.")
+    else:
+        if input_mode == "🖼️ Image Upload":
+            uploaded_img = st.file_uploader("Upload notebook/worksheet snapshot", type=["png", "jpg", "jpeg"])
+            if uploaded_img:
+                col_img, col_diag = st.columns([1, 1], gap="large")
+                with col_img:
+                    image = Image.open(uploaded_img)
+                    image.thumbnail((1600, 1600))
+                    st.image(image, caption="Your Snapshot", use_container_width=True)
 
-        with col_diag:
-            if st.button("💡 Give Hints for Every Question", type="primary"):
-                if not client:
-                    st.error("Gemini client not initialized. Check your GEMINI_API_KEY secret.")
+                with col_diag:
+                    if st.button("💡 Give Hints for Every Question", type="primary"):
+                        image.thumbnail((1024, 1024))
+                        buffered = io.BytesIO()
+                        image.save(buffered, format="JPEG", quality=85)
+                        compressed_bytes = buffered.getvalue()
+                        img_part = types.Part.from_bytes(data=compressed_bytes, mime_type="image/jpeg")
+
+                        models_to_try = ['gemini-2.5-flash', 'gemini-2.0-flash']
+                        success = False
+                        
+                        with st.spinner("Routing across flash clusters with backoff..."):
+                            for model_name in models_to_try:
+                                for attempt in range(2):
+                                    try:
+                                        res = client.models.generate_content(
+                                            model=model_name,
+                                            contents=[img_part, f"Context: {user_context}\n\n{HINT_SYSTEM_PROMPT}"]
+                                        )
+                                        st.markdown(f"### 💡 Multi-Question Hint Guide (via `{model_name}`)")
+                                        st.markdown(res.text)
+                                        success = True
+                                        break
+                                    except Exception as e:
+                                        err_str = str(e)
+                                        if any(code in err_str for code in ["503", "UNAVAILABLE", "429", "RESOURCE_EXHAUSTED"]) and attempt < 1:
+                                            time.sleep(1.5 + random.uniform(0.3, 0.8))
+                                            continue
+                                        break
+                                if success:
+                                    break
+                                    
+                        if not success:
+                            st.warning("⚠️ Vision pool congested (503). Switch to **Direct Text / Paste** mode above for instant results.")
+
+        else:
+            pasted_text = st.text_area(
+                "Paste question text / statement / formula list:",
+                height=180,
+                placeholder="1. A 2kg block slides down a 30° rough incline with mu=0.2...\n2. Integrate from 0 to pi/2..."
+            )
+            if st.button("🚀 Generate Socratic Guide", type="primary"):
+                if not pasted_text.strip():
+                    st.warning("Please paste or type a question first.")
                 else:
-                    HINT_PROMPT = f"""
-You are an expert JEE Main/Advanced & Board STEM tutor. Analyze this uploaded image containing multiple questions/problems.
-User context: {user_context}
-
-Instructions:
-1. Detect **every single question, sub-question, or problem** visible in the image.
-2. For *every single question*, output:
-   - **Q[No.]: [Short summary/transcription]**
-   - **Key Concept / Formula**: [Formula name or expression needed]
-   - **Socratic Hint**: [Guiding question to trigger insight]
-   - **First Kickstart Step**: [Exact first line/setup to begin solving]
-"""
-                    image.thumbnail((1024, 1024))
-                    buffered = io.BytesIO()
-                    image.save(buffered, format="JPEG", quality=85)
-                    compressed_bytes = buffered.getvalue()
-
-                    models_to_try = ['gemini-2.5-flash', 'gemini-2.0-flash']
-                    response = None
-                    success = False
-                    
-                    with st.spinner("Routing across flash clusters..."):
-                        for model_name in models_to_try:
-                            try:
-                                response = client.models.generate_content(
-                                    model=model_name,
-                                    contents=[
-                                        types.Part.from_bytes(data=compressed_bytes, mime_type="image/jpeg"),
-                                        HINT_PROMPT
-                                    ]
-                                )
-                                st.markdown(f"### 💡 Multi-Question Hint Guide (via `{model_name}`)")
-                                st.markdown(response.text)
-                                success = True
-                                break
-                            except Exception as e:
-                                continue
-                                
-                    if not success:
-                        st.warning("⚠️ Vision pool saturated (503). Use the text fallback box below—zero rate limit queue locks!")
-
-    # Instant Text-Fallback Box (Bypasses vision 503s completely)
-    with st.expander("⚡ Text/Manual Question Fallback (Zero Saturation)", expanded=not uploaded_img):
-        pasted_text = st.text_area("Paste question text here if photo upload saturates:", placeholder="e.g., 1. A block of mass 2kg slides down a 30° incline...")
-        if st.button("🚀 Get Hints from Text", type="secondary"):
-            if not client:
-                st.error("API key missing.")
-            elif not pasted_text.strip():
-                st.warning("Please paste a question first.")
-            else:
-                with st.spinner("Generating socratic breakdown via text engine..."):
-                    try:
-                        res = client.models.generate_content(
-                            model="gemini-2.0-flash",
-                            contents=f"Context: {user_context}\n\nQuestions/Problems:\n{pasted_text}\n\nProvide for each question: Key Concept/Formula, Socratic Hint, and First Kickstart Step."
-                        )
-                        st.markdown("### 💡 Socratic Hint Guide")
-                        st.markdown(res.text)
-                    except Exception as e:
-                        st.error(f"Error: {e}")
+                    with st.spinner("Generating breakdown..."):
+                        try:
+                            res = client.models.generate_content(
+                                model="gemini-2.0-flash",
+                                contents=f"Context: {user_context}\n\n{HINT_SYSTEM_PROMPT}\n\nProblems:\n{pasted_text}"
+                            )
+                            st.markdown("### 💡 Socratic Hint Guide")
+                            st.markdown(res.text)
+                        except Exception as e:
+                            st.error(f"Error: {e}")
