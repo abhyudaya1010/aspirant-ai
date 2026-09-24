@@ -12,6 +12,7 @@ import time
 import random
 from PIL import Image
 import streamlit as st
+import pytesseract
 from google import genai
 from google.genai import types
 
@@ -164,36 +165,6 @@ NCERT_FULL_DATABASE = {
             {"name": "Ch 13: Statistics", "url": "https://ncert.nic.in/textbook/pdf/jemh113.pdf"},
             {"name": "Ch 14: Probability", "url": "https://ncert.nic.in/textbook/pdf/jemh114.pdf"},
         ]
-    },
-    "Class 9": {
-        "Science": [
-            {"name": "Ch 1: Matter in Our Surroundings", "url": "https://ncert.nic.in/textbook/pdf/iesc101.pdf"},
-            {"name": "Ch 2: Is Matter Around Us Pure", "url": "https://ncert.nic.in/textbook/pdf/iesc102.pdf"},
-            {"name": "Ch 3: Atoms and Molecules", "url": "https://ncert.nic.in/textbook/pdf/iesc103.pdf"},
-            {"name": "Ch 4: Structure of the Atom", "url": "https://ncert.nic.in/textbook/pdf/iesc104.pdf"},
-            {"name": "Ch 5: The Fundamental Unit of Life", "url": "https://ncert.nic.in/textbook/pdf/iesc105.pdf"},
-            {"name": "Ch 6: Tissues", "url": "https://ncert.nic.in/textbook/pdf/iesc106.pdf"},
-            {"name": "Ch 7: Motion", "url": "https://ncert.nic.in/textbook/pdf/iesc107.pdf"},
-            {"name": "Ch 8: Force and Laws of Motion", "url": "https://ncert.nic.in/textbook/pdf/iesc108.pdf"},
-            {"name": "Ch 9: Gravitation", "url": "https://ncert.nic.in/textbook/pdf/iesc109.pdf"},
-            {"name": "Ch 10: Work and Energy", "url": "https://ncert.nic.in/textbook/pdf/iesc110.pdf"},
-            {"name": "Ch 11: Sound", "url": "https://ncert.nic.in/textbook/pdf/iesc111.pdf"},
-            {"name": "Ch 12: Improvement in Food Resources", "url": "https://ncert.nic.in/textbook/pdf/iesc112.pdf"},
-        ],
-        "Mathematics": [
-            {"name": "Ch 1: Number Systems", "url": "https://ncert.nic.in/textbook/pdf/iemh101.pdf"},
-            {"name": "Ch 2: Polynomials", "url": "https://ncert.nic.in/textbook/pdf/iemh102.pdf"},
-            {"name": "Ch 3: Coordinate Geometry", "url": "https://ncert.nic.in/textbook/pdf/iemh103.pdf"},
-            {"name": "Ch 4: Linear Equations in Two Variables", "url": "https://ncert.nic.in/textbook/pdf/iemh104.pdf"},
-            {"name": "Ch 5: Introduction to Euclid's Geometry", "url": "https://ncert.nic.in/textbook/pdf/iemh105.pdf"},
-            {"name": "Ch 6: Lines and Angles", "url": "https://ncert.nic.in/textbook/pdf/iemh106.pdf"},
-            {"name": "Ch 7: Triangles", "url": "https://ncert.nic.in/textbook/pdf/iemh107.pdf"},
-            {"name": "Ch 8: Quadrilaterals", "url": "https://ncert.nic.in/textbook/pdf/iemh108.pdf"},
-            {"name": "Ch 9: Circles", "url": "https://ncert.nic.in/textbook/pdf/iemh109.pdf"},
-            {"name": "Ch 10: Heron's Formula", "url": "https://ncert.nic.in/textbook/pdf/iemh110.pdf"},
-            {"name": "Ch 11: Surface Areas and Volumes", "url": "https://ncert.nic.in/textbook/pdf/iemh111.pdf"},
-            {"name": "Ch 12: Statistics", "url": "https://ncert.nic.in/textbook/pdf/iemh112.pdf"},
-        ]
     }
 }
 
@@ -234,59 +205,48 @@ if active_feature == "📚 NCERT Textbook Reader (Class 9–12)":
                 )
 
 elif active_feature == "📸 Multi-Question Socratic Hint Inspector":
-    st.subheader("📸 Multi-Question Socratic Hint Engine")
-    st.caption("Upload a photo OR paste question text directly. Zero saturation mode included.")
+    st.subheader("📸 Local OCR & Socratic Hint Engine")
+    st.caption("Upload an image. Text is extracted locally first to bypass cloud vision limits (503s).")
 
     user_context = st.text_input("Optional context (e.g., 'Class 11 rotational dynamics sheet')", "")
     
-    input_mode = st.radio("Choose Input Mode", ["🖼️ Image Upload", "✍️ Direct Text / Paste (Zero 503s)"], horizontal=True)
+    input_mode = st.radio("Choose Input Mode", ["🖼️ Image Upload (Auto OCR)", "✍️ Direct Text / Paste"], horizontal=True)
 
     if not client:
         st.error("Gemini client not initialized. Check your GEMINI_API_KEY secret.")
     else:
-        if input_mode == "🖼️ Image Upload":
+        if input_mode == "🖼️ Image Upload (Auto OCR)":
             uploaded_img = st.file_uploader("Upload notebook/worksheet snapshot", type=["png", "jpg", "jpeg"])
             if uploaded_img:
                 col_img, col_diag = st.columns([1, 1], gap="large")
                 with col_img:
                     image = Image.open(uploaded_img)
-                    image.thumbnail((1600, 1600))
                     st.image(image, caption="Your Snapshot", use_container_width=True)
 
                 with col_diag:
-                    if st.button("💡 Give Hints for Every Question", type="primary"):
-                        image.thumbnail((1024, 1024))
-                        buffered = io.BytesIO()
-                        image.save(buffered, format="JPEG", quality=85)
-                        compressed_bytes = buffered.getvalue()
-                        img_part = types.Part.from_bytes(data=compressed_bytes, mime_type="image/jpeg")
+                    if st.button("🔍 Extract Text & Generate Hints", type="primary"):
+                        with st.spinner("Extracting text locally (Zero 503 risk)..."):
+                            try:
+                                extracted_text = pytesseract.image_to_string(image)
+                            except Exception as ocr_err:
+                                extracted_text = ""
+                                st.warning(f"Local OCR engine note: {ocr_err}. Please use Direct Text mode if tesseract is missing.")
 
-                        models_to_try = ['gemini-2.5-flash', 'gemini-2.0-flash']
-                        success = False
-                        
-                        with st.spinner("Routing across flash clusters with backoff..."):
-                            for model_name in models_to_try:
-                                for attempt in range(2):
-                                    try:
-                                        res = client.models.generate_content(
-                                            model=model_name,
-                                            contents=[img_part, f"Context: {user_context}\n\n{HINT_SYSTEM_PROMPT}"]
-                                        )
-                                        st.markdown(f"### 💡 Multi-Question Hint Guide (via `{model_name}`)")
-                                        st.markdown(res.text)
-                                        success = True
-                                        break
-                                    except Exception as e:
-                                        err_str = str(e)
-                                        if any(code in err_str for code in ["503", "UNAVAILABLE", "429", "RESOURCE_EXHAUSTED"]) and attempt < 1:
-                                            time.sleep(1.5 + random.uniform(0.3, 0.8))
-                                            continue
-                                        break
-                                if success:
-                                    break
-                                    
-                        if not success:
-                            st.warning("⚠️ Vision pool congested (503). Switch to **Direct Text / Paste** mode above for instant results.")
+                        if not extracted_text.strip():
+                            st.warning("⚠️ No text detected cleanly by local OCR. Switch to **Direct Text / Paste** mode to type/paste your questions.")
+                        else:
+                            st.text_area("Detected Text (Editable):", value=extracted_text, height=120, key="ocr_edit")
+                            
+                            with st.spinner("Generating Socratic breakdown..."):
+                                try:
+                                    res = client.models.generate_content(
+                                        model="gemini-2.0-flash",
+                                        contents=f"Context: {user_context}\n\n{HINT_SYSTEM_PROMPT}\n\nExtracted Problems:\n{extracted_text}"
+                                    )
+                                    st.markdown("### 💡 Socratic Hint Guide")
+                                    st.markdown(res.text)
+                                except Exception as e:
+                                    st.error(f"Error communicating with AI: {e}")
 
         else:
             pasted_text = st.text_area(
