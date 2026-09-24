@@ -17,7 +17,7 @@ st.set_page_config(page_title="Aspirant AI", layout="wide")
 # PASTE YOUR VALID GEMINI API KEY HERE (starts with AIza...)
 # Or leave it to check Streamlit Secrets / environment variables
 # ==========================================
-DEFAULT_API_KEY = "YOUR_ACTUAL_API_KEY_HERE"
+DEFAULT_API_KEY = "AQ.Ab8RN6KFVqYJkcVfMAKY2bNtl_E7uCkO4KKDP_IJ4iCigv33vg"
 
 api_key = st.secrets.get(
     "GEMINI_API_KEY",
