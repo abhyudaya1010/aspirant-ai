@@ -1,5 +1,6 @@
 import sys
 import asyncio
+import platform
 if sys.platform.startswith("win"):
     try:
         asyncio.get_event_loop_policy()
@@ -15,6 +16,13 @@ import streamlit as st
 import pytesseract
 from google import genai
 from google.genai import types
+
+# Auto-configure local Windows path for Tesseract (safe for Streamlit Cloud Linux too)
+if platform.system() == "Windows":
+    try:
+        pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+    except Exception:
+        pass
 
 st.set_page_config(page_title="Aspirant AI", layout="wide")
 
@@ -173,7 +181,7 @@ if active_feature == "📚 NCERT Textbook Reader (Class 9–12)":
 
 elif active_feature == "📸 Multi-Question Socratic Hint Inspector":
     st.subheader("📸 Local OCR & Socratic Hint Engine")
-    st.caption("Upload an image. Text is read locally to completely bypass cloud vision limits (503s).")
+    st.caption("Upload an image (processed locally via Tesseract) or use Direct Text mode.")
 
     user_context = st.text_input("Optional context (e.g., 'Class 11 rotational dynamics sheet')", "")
     input_mode = st.radio("Choose Input Mode", ["🖼️ Image Upload (Local OCR)", "✍️ Direct Text / Paste"], horizontal=True)
@@ -196,14 +204,14 @@ elif active_feature == "📸 Multi-Question Socratic Hint Inspector":
                                 extracted_text = pytesseract.image_to_string(image)
                             except Exception as ocr_err:
                                 extracted_text = ""
-                                st.warning(f"OCR note: {ocr_err}")
+                                st.error(f"Tesseract error: {ocr_err}")
 
                         if not extracted_text.strip():
-                            st.warning("⚠️ No text detected cleanly. Switch to **Direct Text / Paste** mode to type/paste your questions.")
+                            st.warning("⚠️ No text detected cleanly. Switch to **Direct Text / Paste** mode below.")
                         else:
                             st.text_area("Detected Text (Editable):", value=extracted_text, height=120, key="ocr_edit")
                             
-                            with st.spinner("Generating Socratic breakdown via text pipeline..."):
+                            with st.spinner("Generating Socratic breakdown..."):
                                 try:
                                     res = client.models.generate_content(
                                         model="gemini-2.0-flash",
