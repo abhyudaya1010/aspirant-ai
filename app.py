@@ -14,14 +14,13 @@ if sys.platform.startswith("win"):
 st.set_page_config(page_title="Aspirant AI", layout="wide")
 
 # ==========================================
-# PASTE YOUR VALID GEMINI API KEY HERE (starts with AIza...)
-# Or leave it to check Streamlit Secrets / environment variables
+# PASTE YOUR AQ... API KEY HERE
 # ==========================================
 DEFAULT_API_KEY = "AQ.Ab8RN6KFVqYJkcVfMAKY2bNtl_E7uCkO4KKDP_IJ4iCigv33vg"
 
 api_key = st.secrets.get(
     "GEMINI_API_KEY",
-    os.getenv("GEMINI_API_KEY", DEFAULT_API_KEY if DEFAULT_API_KEY != "YOUR_ACTUAL_API_KEY_HERE" else "")
+    os.getenv("GEMINI_API_KEY", DEFAULT_API_KEY if "YOUR_ACTUAL_API_KEY" not in DEFAULT_API_KEY else "")
 )
 
 client = genai.Client(api_key=api_key) if api_key else None
@@ -39,8 +38,8 @@ with st.sidebar:
       ],
   )
   st.markdown("---")
-  if not client or api_key == "YOUR_ACTUAL_API_KEY_HERE":
-    st.warning("⚠️ Please input a valid Gemini API key to use the Vision Inspector.")
+  if not client or "YOUR_ACTUAL_API_KEY" in DEFAULT_API_KEY:
+    st.warning("⚠️ Please insert your actual `AQ...` key into `DEFAULT_API_KEY` at the top of the script.")
 
 NCERT_FULL_DATABASE = {
     "Class 12": {
@@ -239,8 +238,8 @@ elif active_feature == "📸 Multi-Question Socratic Hint Inspector":
 
     with col_diag:
       if st.button("💡 Give Hints for Every Question", type="primary"):
-        if not client or api_key == "YOUR_ACTUAL_API_KEY_HERE":
-          st.error("Please configure a valid Gemini API key in the script or via Streamlit secrets.")
+        if not client or "YOUR_ACTUAL_API_KEY" in DEFAULT_API_KEY:
+          st.error("Please insert your actual `AQ...` key into `DEFAULT_API_KEY` at the top of the script.")
         else:
           HINT_PROMPT = f"""
 You are an expert JEE Main/Advanced & Board STEM tutor. Analyze this uploaded image containing multiple questions/problems.
@@ -254,8 +253,8 @@ Instructions:
    - **Socratic Hint**: [Guiding question to trigger insight]
    - **First Kickstart Step**: [Exact first line/setup to begin solving]
 """
-          # Stable production endpoint
-          models_to_try = ["gemini-2.5-flash", "gemini-2.0-flash"]
+          # Updated to the current production workhorse model gemini-3.6-flash
+          models_to_try = ["gemini-3.6-flash", "gemini-3.5-flash"]
           response = None
           last_error = None
 
