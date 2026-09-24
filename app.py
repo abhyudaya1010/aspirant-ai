@@ -667,20 +667,35 @@ Instructions:
    - **Socratic Hint**: [Guiding question to trigger insight]
    - **First Kickstart Step**: [Exact first line/setup to begin solving]
 """
+          # Fallback sequence to handle 503 high traffic limits smoothly
+          models_to_try = ["gemini-3.8-flash", "gemini-3.6-flash"]
+          response = None
           max_retries = 3
+
           with st.spinner("Generating multi-question Socratic hints..."):
-            for attempt in range(max_retries):
-              try:
-                response = client.models.generate_content(
-                    model="gemini-3.6-flash", contents=[image, HINT_PROMPT]
-                )
-                st.markdown("### 💡 Multi-Question Hint Guide")
-                st.markdown(response.text)
-                break
-              except Exception as e:
-                if "503" in str(e) and attempt < max_retries - 1:
-                  time.sleep(2 * (attempt + 1))
-                  continue
-                else:
-                  st.error(f"Analysis failed after retries: {e}")
+            for model_name in models_to_try:
+              success = False
+              for attempt in range(max_retries):
+                try:
+                  response = client.models.generate_content(
+                      model=model_name, contents=[image, HINT_PROMPT]
+                  )
+                  success = True
                   break
+                except Exception as e:
+                  if "503" in str(e) and attempt < max_retries - 1:
+                    time.sleep(2 * (attempt + 1))
+                    continue
+                  else:
+                    break
+              if success:
+                break
+
+            if response and hasattr(response, "text"):
+              st.markdown("### 💡 Multi-Question Hint Guide")
+              st.markdown(response.text)
+            else:
+              st.error(
+                  "All model endpoints are currently experiencing heavy traffic."
+                  " Please try again in a few seconds."
+              )
