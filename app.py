@@ -667,8 +667,8 @@ Instructions:
    - **Socratic Hint**: [Guiding question to trigger insight]
    - **First Kickstart Step**: [Exact first line/setup to begin solving]
 """
-          # Model fallback list using current production endpoints
-          models_to_try = ["gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.5-flash"]
+          # Stable endpoints with built-in retry fallback
+          models_to_try = ["gemini-2.5-flash", "gemini-2.0-flash"]
           response = None
           max_retries = 3
 
@@ -684,7 +684,7 @@ Instructions:
                   break
                 except Exception as e:
                   if "503" in str(e) and attempt < max_retries - 1:
-                    time.sleep(2 * (attempt + 1))
+                    time.sleep(1.5 * (attempt + 1))
                     continue
                   else:
                     break
@@ -696,6 +696,6 @@ Instructions:
               st.markdown(response.text)
             else:
               st.error(
-                  "All model endpoints are currently experiencing high traffic."
-                  " Please wait a moment and click the button again."
+                  "Analysis failed. Please check your network connection or try"
+                  " again."
               )
