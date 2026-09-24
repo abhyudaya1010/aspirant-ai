@@ -12,7 +12,6 @@ import time
 import random
 from PIL import Image
 import streamlit as st
-import pytesseract
 from google import genai
 from google.genai import types
 
@@ -132,39 +131,6 @@ NCERT_FULL_DATABASE = {
             {"name": "Ch 13: Statistics", "url": "https://ncert.nic.in/textbook/pdf/kemh113.pdf"},
             {"name": "Ch 14: Probability", "url": "https://ncert.nic.in/textbook/pdf/kemh114.pdf"},
         ]
-    },
-    "Class 10": {
-        "Science": [
-            {"name": "Ch 1: Chemical Reactions and Equations", "url": "https://ncert.nic.in/textbook/pdf/jesc101.pdf"},
-            {"name": "Ch 2: Acids, Bases and Salts", "url": "https://ncert.nic.in/textbook/pdf/jesc102.pdf"},
-            {"name": "Ch 3: Metals and Non-metals", "url": "https://ncert.nic.in/textbook/pdf/jesc103.pdf"},
-            {"name": "Ch 4: Carbon and its Compounds", "url": "https://ncert.nic.in/textbook/pdf/jesc104.pdf"},
-            {"name": "Ch 5: Life Processes", "url": "https://ncert.nic.in/textbook/pdf/jesc105.pdf"},
-            {"name": "Ch 6: Control and Coordination", "url": "https://ncert.nic.in/textbook/pdf/jesc106.pdf"},
-            {"name": "Ch 7: How do Organisms Reproduce?", "url": "https://ncert.nic.in/textbook/pdf/jesc107.pdf"},
-            {"name": "Ch 8: Heredity", "url": "https://ncert.nic.in/textbook/pdf/jesc108.pdf"},
-            {"name": "Ch 9: Light - Reflection and Refraction", "url": "https://ncert.nic.in/textbook/pdf/jesc109.pdf"},
-            {"name": "Ch 10: The Human Eye and the Colourful World", "url": "https://ncert.nic.in/textbook/pdf/jesc110.pdf"},
-            {"name": "Ch 11: Electricity", "url": "https://ncert.nic.in/textbook/pdf/jesc111.pdf"},
-            {"name": "Ch 12: Magnetic Effects of Electric Current", "url": "https://ncert.nic.in/textbook/pdf/jesc112.pdf"},
-            {"name": "Ch 13: Our Environment", "url": "https://ncert.nic.in/textbook/pdf/jesc113.pdf"},
-        ],
-        "Mathematics": [
-            {"name": "Ch 1: Real Numbers", "url": "https://ncert.nic.in/textbook/pdf/jemh101.pdf"},
-            {"name": "Ch 2: Polynomials", "url": "https://ncert.nic.in/textbook/pdf/jemh102.pdf"},
-            {"name": "Ch 3: Pair of Linear Equations in Two Variables", "url": "https://ncert.nic.in/textbook/pdf/jemh103.pdf"},
-            {"name": "Ch 4: Quadratic Equations", "url": "https://ncert.nic.in/textbook/pdf/jemh104.pdf"},
-            {"name": "Ch 5: Arithmetic Progressions", "url": "https://ncert.nic.in/textbook/pdf/jemh105.pdf"},
-            {"name": "Ch 6: Triangles", "url": "https://ncert.nic.in/textbook/pdf/jemh106.pdf"},
-            {"name": "Ch 7: Coordinate Geometry", "url": "https://ncert.nic.in/textbook/pdf/jemh107.pdf"},
-            {"name": "Ch 8: Introduction to Trigonometry", "url": "https://ncert.nic.in/textbook/pdf/jemh108.pdf"},
-            {"name": "Ch 9: Some Applications of Trigonometry", "url": "https://ncert.nic.in/textbook/pdf/jemh109.pdf"},
-            {"name": "Ch 10: Circles", "url": "https://ncert.nic.in/textbook/pdf/jemh110.pdf"},
-            {"name": "Ch 11: Areas Related to Circles", "url": "https://ncert.nic.in/textbook/pdf/jemh111.pdf"},
-            {"name": "Ch 12: Surface Areas and Volumes", "url": "https://ncert.nic.in/textbook/pdf/jemh112.pdf"},
-            {"name": "Ch 13: Statistics", "url": "https://ncert.nic.in/textbook/pdf/jemh113.pdf"},
-            {"name": "Ch 14: Probability", "url": "https://ncert.nic.in/textbook/pdf/jemh114.pdf"},
-        ]
     }
 }
 
@@ -205,17 +171,16 @@ if active_feature == "📚 NCERT Textbook Reader (Class 9–12)":
                 )
 
 elif active_feature == "📸 Multi-Question Socratic Hint Inspector":
-    st.subheader("📸 Local OCR & Socratic Hint Engine")
-    st.caption("Upload an image. Text is extracted locally first to bypass cloud vision limits (503s).")
+    st.subheader("📸 Socratic Hint Engine")
+    st.caption("Upload a snapshot OR use the text fallback box below to avoid any 503 limits.")
 
     user_context = st.text_input("Optional context (e.g., 'Class 11 rotational dynamics sheet')", "")
-    
-    input_mode = st.radio("Choose Input Mode", ["🖼️ Image Upload (Auto OCR)", "✍️ Direct Text / Paste"], horizontal=True)
+    input_mode = st.radio("Choose Input Mode", ["🖼️ Image Upload", "✍️ Direct Text / Paste"], horizontal=True)
 
     if not client:
         st.error("Gemini client not initialized. Check your GEMINI_API_KEY secret.")
     else:
-        if input_mode == "🖼️ Image Upload (Auto OCR)":
+        if input_mode == "🖼️ Image Upload":
             uploaded_img = st.file_uploader("Upload notebook/worksheet snapshot", type=["png", "jpg", "jpeg"])
             if uploaded_img:
                 col_img, col_diag = st.columns([1, 1], gap="large")
@@ -224,29 +189,39 @@ elif active_feature == "📸 Multi-Question Socratic Hint Inspector":
                     st.image(image, caption="Your Snapshot", use_container_width=True)
 
                 with col_diag:
-                    if st.button("🔍 Extract Text & Generate Hints", type="primary"):
-                        with st.spinner("Extracting text locally (Zero 503 risk)..."):
-                            try:
-                                extracted_text = pytesseract.image_to_string(image)
-                            except Exception as ocr_err:
-                                extracted_text = ""
-                                st.warning(f"Local OCR engine note: {ocr_err}. Please use Direct Text mode if tesseract is missing.")
+                    if st.button("💡 Give Hints for Every Question", type="primary"):
+                        image.thumbnail((1024, 1024))
+                        buffered = io.BytesIO()
+                        image.save(buffered, format="JPEG", quality=85)
+                        compressed_bytes = buffered.getvalue()
+                        img_part = types.Part.from_bytes(data=compressed_bytes, mime_type="image/jpeg")
 
-                        if not extracted_text.strip():
-                            st.warning("⚠️ No text detected cleanly by local OCR. Switch to **Direct Text / Paste** mode to type/paste your questions.")
-                        else:
-                            st.text_area("Detected Text (Editable):", value=extracted_text, height=120, key="ocr_edit")
-                            
-                            with st.spinner("Generating Socratic breakdown..."):
-                                try:
-                                    res = client.models.generate_content(
-                                        model="gemini-2.0-flash",
-                                        contents=f"Context: {user_context}\n\n{HINT_SYSTEM_PROMPT}\n\nExtracted Problems:\n{extracted_text}"
-                                    )
-                                    st.markdown("### 💡 Socratic Hint Guide")
-                                    st.markdown(res.text)
-                                except Exception as e:
-                                    st.error(f"Error communicating with AI: {e}")
+                        models_to_try = ['gemini-2.5-flash', 'gemini-2.0-flash']
+                        success = False
+                        
+                        with st.spinner("Analyzing image via flash cluster..."):
+                            for model_name in models_to_try:
+                                for attempt in range(2):
+                                    try:
+                                        res = client.models.generate_content(
+                                            model=model_name,
+                                            contents=[img_part, f"Context: {user_context}\n\n{HINT_SYSTEM_PROMPT}"]
+                                        )
+                                        st.markdown(f"### 💡 Multi-Question Hint Guide (via `{model_name}`)")
+                                        st.markdown(res.text)
+                                        success = True
+                                        break
+                                    except Exception as e:
+                                        err_str = str(e)
+                                        if any(code in err_str for code in ["503", "UNAVAILABLE", "429", "RESOURCE_EXHAUSTED"]) and attempt < 1:
+                                            time.sleep(1.5 + random.uniform(0.3, 0.8))
+                                            continue
+                                        break
+                                if success:
+                                    break
+                                    
+                        if not success:
+                            st.warning("⚠️ Vision pool currently saturated (503). Switch to **Direct Text / Paste** mode above for instant results.")
 
         else:
             pasted_text = st.text_area(
@@ -262,7 +237,7 @@ elif active_feature == "📸 Multi-Question Socratic Hint Inspector":
                         try:
                             res = client.models.generate_content(
                                 model="gemini-2.0-flash",
-                                contents=f"Context: {user_context}\n\n{HINT_SYSTEM_PROMPT}\n\nProblems:\n{pasted_text}"
+                                contents=f"Context: {user_context}\n\n{HINT_SYSTEM_PROMPS if 'HINT_SYSTEM_PROMPS' in globals() else HINT_SYSTEM_PROMPT}\n\nProblems:\n{pasted_text}"
                             )
                             st.markdown("### 💡 Socratic Hint Guide")
                             st.markdown(res.text)
