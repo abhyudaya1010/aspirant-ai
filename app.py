@@ -667,8 +667,8 @@ Instructions:
    - **Socratic Hint**: [Guiding question to trigger insight]
    - **First Kickstart Step**: [Exact first line/setup to begin solving]
 """
-          # Fallback sequence to handle 503 high traffic limits smoothly
-          models_to_try = ["gemini-3.8-flash", "gemini-3.6-flash"]
+          # Model fallback list using current production endpoints
+          models_to_try = ["gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.5-flash"]
           response = None
           max_retries = 3
 
@@ -696,6 +696,6 @@ Instructions:
               st.markdown(response.text)
             else:
               st.error(
-                  "All model endpoints are currently experiencing heavy traffic."
-                  " Please try again in a few seconds."
+                  "All model endpoints are currently experiencing high traffic."
+                  " Please wait a moment and click the button again."
               )
