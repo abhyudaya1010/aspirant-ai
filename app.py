@@ -1,30 +1,18 @@
 import sys
 import asyncio
-import platform
 if sys.platform.startswith("win"):
-    try:
-        asyncio.get_event_loop_policy()
-    except Exception:
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 import os
 import io
+import time
 from PIL import Image
 import streamlit as st
-import pytesseract
 from google import genai
 from google.genai import types
 
-# Auto-configure local Windows path for Tesseract (safe for Streamlit Cloud Linux too)
-if platform.system() == "Windows":
-    try:
-        pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-    except Exception:
-        pass
-
 st.set_page_config(page_title="Aspirant AI", layout="wide")
 
-# Safe client initialization
 try:
     api_key = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", ""))
 except Exception:
@@ -46,7 +34,7 @@ with st.sidebar:
     )
     st.markdown("---")
     if not client:
-        st.warning("⚠️ GEMINI_API_KEY not found in secrets/env. AI features require it.")
+        st.warning("⚠️ GEMINI_API_KEY not found in secrets/env. Vision inspector needs it.")
 
 NCERT_FULL_DATABASE = {
     "Class 12": {
@@ -138,19 +126,71 @@ NCERT_FULL_DATABASE = {
             {"name": "Ch 13: Statistics", "url": "https://ncert.nic.in/textbook/pdf/kemh113.pdf"},
             {"name": "Ch 14: Probability", "url": "https://ncert.nic.in/textbook/pdf/kemh114.pdf"},
         ]
+    },
+    "Class 10": {
+        "Science": [
+            {"name": "Ch 1: Chemical Reactions and Equations", "url": "https://ncert.nic.in/textbook/pdf/jesc101.pdf"},
+            {"name": "Ch 2: Acids, Bases and Salts", "url": "https://ncert.nic.in/textbook/pdf/jesc102.pdf"},
+            {"name": "Ch 3: Metals and Non-metals", "url": "https://ncert.nic.in/textbook/pdf/jesc103.pdf"},
+            {"name": "Ch 4: Carbon and its Compounds", "url": "https://ncert.nic.in/textbook/pdf/jesc104.pdf"},
+            {"name": "Ch 5: Life Processes", "url": "https://ncert.nic.in/textbook/pdf/jesc105.pdf"},
+            {"name": "Ch 6: Control and Coordination", "url": "https://ncert.nic.in/textbook/pdf/jesc106.pdf"},
+            {"name": "Ch 7: How do Organisms Reproduce?", "url": "https://ncert.nic.in/textbook/pdf/jesc107.pdf"},
+            {"name": "Ch 8: Heredity", "url": "https://ncert.nic.in/textbook/pdf/jesc108.pdf"},
+            {"name": "Ch 9: Light - Reflection and Refraction", "url": "https://ncert.nic.in/textbook/pdf/jesc109.pdf"},
+            {"name": "Ch 10: The Human Eye and the Colourful World", "url": "https://ncert.nic.in/textbook/pdf/jesc110.pdf"},
+            {"name": "Ch 11: Electricity", "url": "https://ncert.nic.in/textbook/pdf/jesc111.pdf"},
+            {"name": "Ch 12: Magnetic Effects of Electric Current", "url": "https://ncert.nic.in/textbook/pdf/jesc112.pdf"},
+            {"name": "Ch 13: Our Environment", "url": "https://ncert.nic.in/textbook/pdf/jesc113.pdf"},
+        ],
+        "Mathematics": [
+            {"name": "Ch 1: Real Numbers", "url": "https://ncert.nic.in/textbook/pdf/jemh101.pdf"},
+            {"name": "Ch 2: Polynomials", "url": "https://ncert.nic.in/textbook/pdf/jemh102.pdf"},
+            {"name": "Ch 3: Pair of Linear Equations in Two Variables", "url": "https://ncert.nic.in/textbook/pdf/jemh103.pdf"},
+            {"name": "Ch 4: Quadratic Equations", "url": "https://ncert.nic.in/textbook/pdf/jemh104.pdf"},
+            {"name": "Ch 5: Arithmetic Progressions", "url": "https://ncert.nic.in/textbook/pdf/jemh105.pdf"},
+            {"name": "Ch 6: Triangles", "url": "https://ncert.nic.in/textbook/pdf/jemh106.pdf"},
+            {"name": "Ch 7: Coordinate Geometry", "url": "https://ncert.nic.in/textbook/pdf/jemh107.pdf"},
+            {"name": "Ch 8: Introduction to Trigonometry", "url": "https://ncert.nic.in/textbook/pdf/jemh108.pdf"},
+            {"name": "Ch 9: Some Applications of Trigonometry", "url": "https://ncert.nic.in/textbook/pdf/jemh109.pdf"},
+            {"name": "Ch 10: Circles", "url": "https://ncert.nic.in/textbook/pdf/jemh110.pdf"},
+            {"name": "Ch 11: Areas Related to Circles", "url": "https://ncert.nic.in/textbook/pdf/jemh111.pdf"},
+            {"name": "Ch 12: Surface Areas and Volumes", "url": "https://ncert.nic.in/textbook/pdf/jemh112.pdf"},
+            {"name": "Ch 13: Statistics", "url": "https://ncert.nic.in/textbook/pdf/jemh113.pdf"},
+            {"name": "Ch 14: Probability", "url": "https://ncert.nic.in/textbook/pdf/jemh114.pdf"},
+        ]
+    },
+    "Class 9": {
+        "Science": [
+            {"name": "Ch 1: Matter in Our Surroundings", "url": "https://ncert.nic.in/textbook/pdf/iesc101.pdf"},
+            {"name": "Ch 2: Is Matter Around Us Pure", "url": "https://ncert.nic.in/textbook/pdf/iesc102.pdf"},
+            {"name": "Ch 3: Atoms and Molecules", "url": "https://ncert.nic.in/textbook/pdf/iesc103.pdf"},
+            {"name": "Ch 4: Structure of the Atom", "url": "https://ncert.nic.in/textbook/pdf/iesc104.pdf"},
+            {"name": "Ch 5: The Fundamental Unit of Life", "url": "https://ncert.nic.in/textbook/pdf/iesc105.pdf"},
+            {"name": "Ch 6: Tissues", "url": "https://ncert.nic.in/textbook/pdf/iesc106.pdf"},
+            {"name": "Ch 7: Motion", "url": "https://ncert.nic.in/textbook/pdf/iesc107.pdf"},
+            {"name": "Ch 8: Force and Laws of Motion", "url": "https://ncert.nic.in/textbook/pdf/iesc108.pdf"},
+            {"name": "Ch 9: Gravitation", "url": "https://ncert.nic.in/textbook/pdf/iesc109.pdf"},
+            {"name": "Ch 10: Work and Energy", "url": "https://ncert.nic.in/textbook/pdf/iesc110.pdf"},
+            {"name": "Ch 11: Sound", "url": "https://ncert.nic.in/textbook/pdf/iesc111.pdf"},
+            {"name": "Ch 12: Improvement in Food Resources", "url": "https://ncert.nic.in/textbook/pdf/iesc112.pdf"},
+        ],
+        "Mathematics": [
+            {"name": "Ch 1: Number Systems", "url": "https://ncert.nic.in/textbook/pdf/iemh101.pdf"},
+            {"name": "Ch 2: Polynomials", "url": "https://ncert.nic.in/textbook/pdf/iemh102.pdf"},
+            {"name": "Ch 3: Coordinate Geometry", "url": "https://ncert.nic.in/textbook/pdf/iemh103.pdf"},
+            {"name": "Ch 4: Linear Equations in Two Variables", "url": "https://ncert.nic.in/textbook/pdf/iemh104.pdf"},
+            {"name": "Ch 5: Introduction to Euclid's Geometry", "url": "https://ncert.nic.in/textbook/pdf/iemh105.pdf"},
+            {"name": "Ch 6: Lines and Angles", "url": "https://ncert.nic.in/textbook/pdf/iemh106.pdf"},
+            {"name": "Ch 7: Triangles", "url": "https://ncert.nic.in/textbook/pdf/iemh107.pdf"},
+            {"name": "Ch 8: Quadrilaterals", "url": "https://ncert.nic.in/textbook/pdf/iemh108.pdf"},
+            {"name": "Ch 9: Circles", "url": "https://ncert.nic.in/textbook/pdf/iemh109.pdf"},
+            {"name": "Ch 10: Heron's Formula", "url": "https://ncert.nic.in/textbook/pdf/iemh110.pdf"},
+            {"name": "Ch 11: Surface Areas and Volumes", "url": "https://ncert.nic.in/textbook/pdf/iemh111.pdf"},
+            {"name": "Ch 12: Statistics", "url": "https://ncert.nic.in/textbook/pdf/iemh112.pdf"},
+        ]
     }
 }
-
-HINT_SYSTEM_PROMPT = """
-You are an expert JEE Main/Advanced & Board STEM tutor. Analyze the provided problems.
-Instructions:
-1. Detect **every single question, sub-question, or problem**.
-2. For *every single question*, output:
-   - **Q[No.]: [Short summary/transcription]**
-   - **Key Concept / Formula**: [Formula name or expression needed]
-   - **Socratic Hint**: [Guiding question to trigger insight]
-   - **First Kickstart Step**: [Exact first line/setup to begin solving]
-"""
 
 if active_feature == "📚 NCERT Textbook Reader (Class 9–12)":
     st.subheader("📖 Official NCERT Textbook Portal")
@@ -178,65 +218,54 @@ if active_feature == "📚 NCERT Textbook Reader (Class 9–12)":
                 )
 
 elif active_feature == "📸 Multi-Question Socratic Hint Inspector":
-    st.subheader("📸 Local OCR & Socratic Hint Engine")
-    st.caption("Upload an image (processed locally via Tesseract) or use Direct Text mode.")
+    st.subheader("📸 Multi-Question Socratic Hint Engine")
+    st.caption("Upload or snap a photo of a worksheet. Gemini detects every single question and provides core concepts and Socratic steering hints.")
 
-    user_context = st.text_input("Optional context (e.g., 'Class 11 rotational dynamics sheet')", "")
-    input_mode = st.radio("Choose Input Mode", ["🖼️ Image Upload (Local OCR)", "✍️ Direct Text / Paste"], horizontal=True)
+    uploaded_img = st.file_uploader(
+        "Upload or snap a photo of your notebook/worksheet", 
+        type=["png", "jpg", "jpeg"]
+    )
+    user_context = st.text_input("Optional context (e.g., 'Class 11 rotational dynamics sheet', or leave blank)", "")
 
-    if not client:
-        st.error("Gemini client not initialized. Check your GEMINI_API_KEY secret.")
-    else:
-        if input_mode == "🖼️ Image Upload (Local OCR)":
-            uploaded_img = st.file_uploader("Upload notebook/worksheet snapshot", type=["png", "jpg", "jpeg"])
-            if uploaded_img:
-                col_img, col_diag = st.columns([1, 1], gap="large")
-                with col_img:
-                    image = Image.open(uploaded_img)
-                    st.image(image, caption="Your Snapshot", use_container_width=True)
+    if uploaded_img:
+        col_img, col_diag = st.columns([1, 1], gap="large")
+        with col_img:
+            image = Image.open(uploaded_img)
+            image.thumbnail((1600, 1600))
+            st.image(image, caption="Your Snapshot", use_container_width=True)
 
-                with col_diag:
-                    if st.button("🔍 Extract Text & Generate Hints", type="primary"):
-                        with st.spinner("Extracting text locally..."):
-                            try:
-                                extracted_text = pytesseract.image_to_string(image)
-                            except Exception as ocr_err:
-                                extracted_text = ""
-                                st.error(f"Tesseract error: {ocr_err}")
-
-                        if not extracted_text.strip():
-                            st.warning("⚠️ No text detected cleanly. Switch to **Direct Text / Paste** mode below.")
-                        else:
-                            st.text_area("Detected Text (Editable):", value=extracted_text, height=120, key="ocr_edit")
-                            
-                            with st.spinner("Generating Socratic breakdown..."):
-                                try:
-                                    res = client.models.generate_content(
-                                        model="gemini-2.5-flash",
-                                        contents=f"Context: {user_context}\n\n{HINT_SYSTEM_PROMPT}\n\nExtracted Problems:\n{extracted_text}"
-                                    )
-                                    st.markdown("### 💡 Socratic Hint Guide")
-                                    st.markdown(res.text)
-                                except Exception as e:
-                                    st.error(f"Error communicating with AI: {e}")
-
-        else:
-            pasted_text = st.text_area(
-                "Paste question text / statement / formula list:",
-                height=180,
-                placeholder="1. A 2kg block slides down a 30° rough incline with mu=0.2...\n2. Integrate from 0 to pi/2..."
-            )
-            if st.button("🚀 Generate Socratic Guide", type="primary"):
-                if not pasted_text.strip():
-                    st.warning("Please paste or type a question first.")
+        with col_diag:
+            if st.button("💡 Give Hints for Every Question", type="primary"):
+                if not client:
+                    st.error("Gemini client not initialized. Check your GEMINI_API_KEY secret.")
                 else:
-                    with st.spinner("Generating breakdown..."):
-                        try:
-                            res = client.models.generate_content(
-                                model="gemini-2.5-flash",
-                                contents=f"Context: {user_context}\n\n{HINT_SYSTEM_PROMPT}\n\nProblems:\n{pasted_text}"
-                            )
-                            st.markdown("### 💡 Socratic Hint Guide")
-                            st.markdown(res.text)
-                        except Exception as e:
-                            st.error(f"Error: {e}")
+                    HINT_PROMPT = f"""
+You are an expert JEE Main/Advanced & Board STEM tutor. Analyze this uploaded image containing multiple questions/problems.
+User context: {user_context}
+
+Instructions:
+1. Detect **every single question, sub-question, or problem** visible in the image.
+2. For *every single question*, output:
+   - **Q[No.]: [Short summary/transcription]**
+   - **Key Concept / Formula**: [Formula name or expression needed]
+   - **Socratic Hint**: [Guiding question to trigger insight]
+   - **First Kickstart Step**: [Exact first line/setup to begin solving]
+"""
+                    max_retries = 3
+                    with st.spinner("Generating multi-question Socratic hints..."):
+                        for attempt in range(max_retries):
+                            try:
+                                response = client.models.generate_content(
+                                    model='gemini-2.5-flash',
+                                    contents=[image, HINT_PROMPT]
+                                )
+                                st.markdown("### 💡 Multi-Question Hint Guide")
+                                st.markdown(response.text)
+                                break
+                            except Exception as e:
+                                if "503" in str(e) and attempt < max_retries - 1:
+                                    time.sleep(2 * (attempt + 1))
+                                    continue
+                                else:
+                                    st.error(f"Analysis failed after retries: {e}")
+                                    break
