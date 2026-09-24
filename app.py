@@ -214,7 +214,7 @@ elif active_feature == "📸 Multi-Question Socratic Hint Inspector":
                             with st.spinner("Generating Socratic breakdown..."):
                                 try:
                                     res = client.models.generate_content(
-                                        model="gemini-2.0-flash",
+                                        model="gemini-3.6-flash",
                                         contents=f"Context: {user_context}\n\n{HINT_SYSTEM_PROMPT}\n\nExtracted Problems:\n{extracted_text}"
                                     )
                                     st.markdown("### 💡 Socratic Hint Guide")
@@ -235,7 +235,7 @@ elif active_feature == "📸 Multi-Question Socratic Hint Inspector":
                     with st.spinner("Generating breakdown..."):
                         try:
                             res = client.models.generate_content(
-                                model="gemini-2.0-flash",
+                                model="gemini-3.6-flash",
                                 contents=f"Context: {user_context}\n\n{HINT_SYSTEM_PROMPT}\n\nProblems:\n{pasted_text}"
                             )
                             st.markdown("### 💡 Socratic Hint Guide")
