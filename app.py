@@ -672,7 +672,7 @@ Instructions:
             for attempt in range(max_retries):
               try:
                 response = client.models.generate_content(
-                    model="gemini-2.5-flash", contents=[image, HINT_PROMPT]
+                    model="gemini-3.6-flash", contents=[image, HINT_PROMPT]
                 )
                 st.markdown("### 💡 Multi-Question Hint Guide")
                 st.markdown(response.text)
