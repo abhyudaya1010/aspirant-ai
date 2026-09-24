@@ -12,6 +12,7 @@ import time
 import random
 from PIL import Image
 import streamlit as st
+import pytesseract
 from google import genai
 from google.genai import types
 
@@ -171,16 +172,16 @@ if active_feature == "📚 NCERT Textbook Reader (Class 9–12)":
                 )
 
 elif active_feature == "📸 Multi-Question Socratic Hint Inspector":
-    st.subheader("📸 Socratic Hint Engine")
-    st.caption("Upload a snapshot OR use the text fallback box below to avoid any 503 limits.")
+    st.subheader("📸 Local OCR & Socratic Hint Engine")
+    st.caption("Upload an image. Text is read locally to completely bypass cloud vision limits (503s).")
 
     user_context = st.text_input("Optional context (e.g., 'Class 11 rotational dynamics sheet')", "")
-    input_mode = st.radio("Choose Input Mode", ["🖼️ Image Upload", "✍️ Direct Text / Paste"], horizontal=True)
+    input_mode = st.radio("Choose Input Mode", ["🖼️ Image Upload (Local OCR)", "✍️ Direct Text / Paste"], horizontal=True)
 
     if not client:
         st.error("Gemini client not initialized. Check your GEMINI_API_KEY secret.")
     else:
-        if input_mode == "🖼️ Image Upload":
+        if input_mode == "🖼️ Image Upload (Local OCR)":
             uploaded_img = st.file_uploader("Upload notebook/worksheet snapshot", type=["png", "jpg", "jpeg"])
             if uploaded_img:
                 col_img, col_diag = st.columns([1, 1], gap="large")
@@ -189,39 +190,29 @@ elif active_feature == "📸 Multi-Question Socratic Hint Inspector":
                     st.image(image, caption="Your Snapshot", use_container_width=True)
 
                 with col_diag:
-                    if st.button("💡 Give Hints for Every Question", type="primary"):
-                        image.thumbnail((1024, 1024))
-                        buffered = io.BytesIO()
-                        image.save(buffered, format="JPEG", quality=85)
-                        compressed_bytes = buffered.getvalue()
-                        img_part = types.Part.from_bytes(data=compressed_bytes, mime_type="image/jpeg")
+                    if st.button("🔍 Extract Text & Generate Hints", type="primary"):
+                        with st.spinner("Extracting text locally..."):
+                            try:
+                                extracted_text = pytesseract.image_to_string(image)
+                            except Exception as ocr_err:
+                                extracted_text = ""
+                                st.warning(f"OCR note: {ocr_err}")
 
-                        models_to_try = ['gemini-2.5-flash', 'gemini-2.0-flash']
-                        success = False
-                        
-                        with st.spinner("Analyzing image via flash cluster..."):
-                            for model_name in models_to_try:
-                                for attempt in range(2):
-                                    try:
-                                        res = client.models.generate_content(
-                                            model=model_name,
-                                            contents=[img_part, f"Context: {user_context}\n\n{HINT_SYSTEM_PROMPT}"]
-                                        )
-                                        st.markdown(f"### 💡 Multi-Question Hint Guide (via `{model_name}`)")
-                                        st.markdown(res.text)
-                                        success = True
-                                        break
-                                    except Exception as e:
-                                        err_str = str(e)
-                                        if any(code in err_str for code in ["503", "UNAVAILABLE", "429", "RESOURCE_EXHAUSTED"]) and attempt < 1:
-                                            time.sleep(1.5 + random.uniform(0.3, 0.8))
-                                            continue
-                                        break
-                                if success:
-                                    break
-                                    
-                        if not success:
-                            st.warning("⚠️ Vision pool currently saturated (503). Switch to **Direct Text / Paste** mode above for instant results.")
+                        if not extracted_text.strip():
+                            st.warning("⚠️ No text detected cleanly. Switch to **Direct Text / Paste** mode to type/paste your questions.")
+                        else:
+                            st.text_area("Detected Text (Editable):", value=extracted_text, height=120, key="ocr_edit")
+                            
+                            with st.spinner("Generating Socratic breakdown via text pipeline..."):
+                                try:
+                                    res = client.models.generate_content(
+                                        model="gemini-2.0-flash",
+                                        contents=f"Context: {user_context}\n\n{HINT_SYSTEM_PROMPT}\n\nExtracted Problems:\n{extracted_text}"
+                                    )
+                                    st.markdown("### 💡 Socratic Hint Guide")
+                                    st.markdown(res.text)
+                                except Exception as e:
+                                    st.error(f"Error communicating with AI: {e}")
 
         else:
             pasted_text = st.text_area(
@@ -237,7 +228,7 @@ elif active_feature == "📸 Multi-Question Socratic Hint Inspector":
                         try:
                             res = client.models.generate_content(
                                 model="gemini-2.0-flash",
-                                contents=f"Context: {user_context}\n\n{HINT_SYSTEM_PROMPS if 'HINT_SYSTEM_PROMPS' in globals() else HINT_SYSTEM_PROMPT}\n\nProblems:\n{pasted_text}"
+                                contents=f"Context: {user_context}\n\n{HINT_SYSTEM_PROMPT}\n\nProblems:\n{pasted_text}"
                             )
                             st.markdown("### 💡 Socratic Hint Guide")
                             st.markdown(res.text)
