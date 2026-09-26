@@ -7,13 +7,87 @@ from PIL import Image
 import streamlit as st
 
 # ==========================================
-# PAGE CONFIGURATION
+# PAGE CONFIGURATION & CUSTOM CSS
 # ==========================================
 st.set_page_config(
-    page_title="Aspirant AI - Socratic Study Companion",
+    page_title="Aspirant AI — Advanced Study Companion",
     page_icon="🎓",
     layout="wide",
 )
+
+st.markdown("""
+<style>
+    /* Global Theme Styling */
+    .main {
+        background-color: #F8FAFC;
+    }
+    
+    /* App Header Styling */
+    .app-header {
+        background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+        padding: 2rem 2.5rem;
+        border-radius: 12px;
+        color: white;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    .app-header h1 {
+        font-size: 2.25rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.025em;
+    }
+    .app-header p {
+        color: #94A3B8;
+        font-size: 1.1rem;
+        margin-bottom: 0;
+    }
+
+    /* Section Headers */
+    h2, h3 {
+        color: #1E293B;
+        font-weight: 700;
+    }
+
+    /* Custom Buttons */
+    .stButton > button {
+        background-color: #2563EB;
+        color: white;
+        border-radius: 8px;
+        font-weight: 600;
+        padding: 0.6rem 1.2rem;
+        border: none;
+        transition: all 0.2s ease-in-out;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    }
+    .stButton > button:hover {
+        background-color: #1D4ED8;
+        box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+    }
+
+    /* Sidebar Customization */
+    section[data-testid="stSidebar"] {
+        background-color: #0F172A;
+        color: #F8FAFC;
+    }
+    section[data-testid="stSidebar"] .stSelectbox label, 
+    section[data-testid="stSidebar"] h2, 
+    section[data-testid="stSidebar"] p, 
+    section[data-testid="stSidebar"] span {
+        color: #F8FAFC !important;
+    }
+
+    /* Cards / Containers */
+    div.stContainer {
+        background: white;
+        padding: 1.2rem;
+        border-radius: 10px;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        margin-bottom: 0.75rem;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 
 # ==========================================
@@ -365,21 +439,25 @@ NCERT_FULL_DATABASE = {
 }
 
 # ==========================================
-# APP UI & HEADER
+# APP HEADER & STYLING WRAPPER
 # ==========================================
-st.title("🎓 Aspirant AI")
 st.markdown(
-    "Your intelligent Socratic study companion for Physics, Math, Chemistry, and"
-    " Engineering Entrance Prep."
+    """
+    <div class="app-header">
+        <h1>🎓 Aspirant AI</h1>
+        <p>Your intelligent Socratic study companion for Physics, Math, Chemistry, and Engineering Entrance Prep.</p>
+    </div>
+""",
+    unsafe_allow_html=True,
 )
 
 # Sidebar configuration
-st.sidebar.header("Control Panel")
+st.sidebar.markdown("### ⚙️ Control Panel")
 study_mode = st.sidebar.selectbox(
     "Select Mode",
     [
         "📚 NCERT Textbook Reader (Class 11-12)",
-        "📸 Socratic Hint Inspector (Image/Worksheet)",
+        "📸 Socratic Hint Inspector",
         "💡 Concept & Problem Solver",
     ],
 )
@@ -389,7 +467,9 @@ study_mode = st.sidebar.selectbox(
 # ==========================================
 if study_mode == "📚 NCERT Textbook Reader (Class 11-12)":
   st.subheader("📖 Official NCERT Textbook Portal")
-  col_c, col_s = st.columns([1, 1], gap="medium")
+  st.markdown("Select your class and subject to directly access verified curriculum textbooks.")
+  
+  col_c, col_s = st.columns(2, gap="medium")
   with col_c:
     selected_class = st.selectbox("Select Class", list(NCERT_FULL_DATABASE.keys()))
   with col_s:
@@ -405,16 +485,16 @@ if study_mode == "📚 NCERT Textbook Reader (Class 11-12)":
   )
 
   for ch in chapters:
-    with st.container(border=True):
-      col1, col2 = st.columns([4, 1])
+    with st.container():
+      col1, col2 = st.columns([4, 1], vertical_alignment="center")
       with col1:
         st.markdown(f"**{ch['name']}**")
       with col2:
         st.markdown(
-            f'<a href="{ch["url"]}" target="_blank">'
+            f'<a href="{ch["url"]}" target="_blank" style="text-decoration: none;">'
             '<button style="width:100%; background-color:#2563EB; color:white;'
-            " border:none; padding:8px 12px; border-radius:4px;"
-            ' font-weight:bold; cursor:pointer;">Open PDF ↗</button>'
+            " border:none; padding:8px 12px; border-radius:6px;"
+            ' font-weight:600; cursor:pointer;">Open PDF ↗</button>'
             "</a>",
             unsafe_allow_html=True,
         )
@@ -422,14 +502,13 @@ if study_mode == "📚 NCERT Textbook Reader (Class 11-12)":
 # ==========================================
 # MODE 2: SOCRATIC HINT INSPECTOR
 # ==========================================
-elif study_mode == "📸 Socratic Hint Inspector (Image/Worksheet)":
+elif study_mode == "📸 Socratic Hint Inspector":
   st.subheader("📸 Socratic Worksheet & Problem Analyzer")
   st.markdown(
       "Snap a photo with your camera or upload an image from your gallery. "
       "Aspirant AI will give you conceptual hints **without** spoiling the final answer!"
   )
 
-  # Input method selection: Camera vs Gallery Upload
   input_method = st.radio(
       "Choose Input Method", ["📁 Upload from Gallery", "📷 Capture with Camera"], horizontal=True
   )
@@ -447,7 +526,6 @@ elif study_mode == "📸 Socratic Hint Inspector (Image/Worksheet)":
   if image is not None:
     st.image(image, caption="Selected Problem", use_container_width=True)
 
-    # Convert image to base64 data URL for the API
     buffered = io.BytesIO()
     image.save(buffered, format=image.format if image.format else "JPEG")
     img_bytes = buffered.getvalue()
@@ -500,6 +578,8 @@ elif study_mode == "📸 Socratic Hint Inspector (Image/Worksheet)":
 # ==========================================
 elif study_mode == "💡 Concept & Problem Solver":
   st.subheader("📚 Quick Concept & Formula Breakdown")
+  st.markdown("Enter any topic or formula to get an in-depth breakdown optimized for competitive exams.")
+  
   concept_query = st.text_input(
       "What concept, formula, or problem text would you like to explore?",
       placeholder="e.g., Explain the inductive effect or rotational kinematics equations.",
