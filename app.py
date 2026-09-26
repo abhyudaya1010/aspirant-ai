@@ -14,7 +14,7 @@ st.set_page_config(page_title="Aspirant AI", layout="wide")
 # ==========================================
 # PASTE YOUR GROQ API KEY HERE (starts with gsk_...)
 # ==========================================
-DEFAULT_API_KEY = "gsk_YOUR_ACTUAL_API_KEY_HERE"
+DEFAULT_API_KEY = ""
 
 api_key = st.secrets.get(
     "GROQ_API_KEY",
