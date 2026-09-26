@@ -451,23 +451,147 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Sidebar configuration
-st.sidebar.markdown("### ⚙️ Control Panel")
-study_mode = st.sidebar.selectbox(
-    "Select Mode",
+# Sidebar configuration - Clean Separation of Features
+st.sidebar.markdown("### ⚙️ Navigation")
+app_section = st.sidebar.radio(
+    "Select Feature Hub",
     [
-        "📚 NCERT Textbook Reader (Class 11-12)",
-        "📸 Socratic Hint Inspector",
-        "💡 Concept & Problem Solver",
+        "🤖 AI Study & Doubt Assistant",
+        "📚 NCERT Textbook Library",
     ],
 )
 
 # ==========================================
-# MODE 1: NCERT TEXTBOOK READER
+# SECTION 1: AI STUDY & DOUBT ASSISTANT
 # ==========================================
-if study_mode == "📚 NCERT Textbook Reader (Class 11-12)":
-  st.subheader("📖 Official NCERT Textbook Portal")
-  st.markdown("Select your class and subject to directly access verified curriculum textbooks.")
+if app_section == "🤖 AI Study & Doubt Assistant":
+  st.subheader("🤖 AI Study & Doubt Assistant")
+  st.markdown("Choose whether you want to analyze a worksheet image with Socratic hints or break down a difficult concept.")
+
+  assistant_mode = st.selectbox(
+      "Select Assistant Tool",
+      [
+          "📸 Socratic Hint Inspector (Camera / Gallery)",
+          "💡 Concept & Formula Solver",
+      ],
+  )
+
+  st.markdown("---")
+
+  # Sub-mode 1: Socratic Hint Inspector
+  if assistant_mode == "📸 Socratic Hint Inspector (Camera / Gallery)":
+    st.markdown("### 📸 Worksheet & Problem Analyzer")
+    st.markdown("Snap a photo or upload an image. Aspirant AI will guide you step-by-step **without** giving away the final answer!")
+
+    input_method = st.radio(
+        "Choose Input Method", ["📁 Upload from Gallery", "📷 Capture with Camera"], horizontal=True
+    )
+
+    image = None
+    if input_method == "📁 Upload from Gallery":
+      uploaded_file = st.file_uploader("Upload question image...", type=["jpg", "jpeg", "png"])
+      if uploaded_file is not None:
+        image = Image.open(uploaded_file)
+    else:
+      camera_file = st.camera_input("Take a picture of the question/worksheet")
+      if camera_file is not None:
+        image = Image.open(camera_file)
+
+    if image is not None:
+      st.image(image, caption="Selected Problem", use_container_width=True)
+
+      buffered = io.BytesIO()
+      image.save(buffered, format=image.format if image.format else "JPEG")
+      img_bytes = buffered.getvalue()
+      encoded_image = base64.b64encode(img_bytes).decode("utf-8")
+      image_url = f"data:image/jpeg;base64,{encoded_image}"
+
+      user_hint_query = st.text_input(
+          "Any specific doubt or where are you stuck?",
+          placeholder="e.g., I'm stuck on finding the moment of inertia component here.",
+      )
+
+      if st.button("Generate Socratic Hints"):
+        HINT_PROMPT = f"""You are Aspirant AI, an expert, encouraging Socratic tutor for rigorous engineering and board exam preparation.
+        Analyze the provided image of the academic problem.
+        User's specific context/doubt: {user_hint_query}
+        
+        Provide a Socratic response:
+        1. Break down the core concepts involved (e.g., formulas, principles).
+        2. Give step-by-step guidance or guiding questions **without giving away the final answer**.
+        3. Point out any common pitfalls to avoid."""
+
+        with st.spinner("Analyzing problem via Groq vision..."):
+          try:
+            chat_completion = client.chat.completions.create(
+                model="qwen/qwen3.8-27b",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": HINT_PROMPT},
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": image_url},
+                            },
+                        ],
+                    }
+                ],
+                max_completion_tokens=800,
+            )
+            response_text = clean_latex_output(
+                chat_completion.choices[0].message.content
+            )
+            st.markdown("### 💡 Socratic Hint Guide")
+            st.markdown(response_text)
+          except Exception as e:
+            st.error(f"Analysis failed. Raw API Error: `{e}`")
+
+  # Sub-mode 2: Concept & Problem Solver
+  elif assistant_mode == "💡 Concept & Formula Solver":
+    st.markdown("### 💡 Concept & Formula Breakdown")
+    st.markdown("Enter any topic, formula, or specific question to get an in-depth explanation tailored for competitive exams.")
+    
+    concept_query = st.text_input(
+        "What concept or problem text would you like to explore?",
+        placeholder="e.g., Explain the inductive effect or rotational kinematics equations.",
+    )
+
+    if st.button("Explain Concept"):
+      if concept_query:
+        with st.spinner("Drafting explanation..."):
+          try:
+            chat_completion = client.chat.completions.create(
+                model="openai/gpt-oss-120b",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are Aspirant AI, an expert physics, chemistry,"
+                            " and math tutor. Provide crisp, high-signal"
+                            " explanations tailored for competitive exams."
+                        ),
+                    },
+                    {"role": "user", "content": concept_query},
+                ],
+                max_completion_tokens=1024,
+            )
+            explanation_text = clean_latex_output(
+                chat_completion.choices[0].message.content
+            )
+            st.markdown("### 📘 Explanation")
+            st.markdown(explanation_text)
+          except Exception as e:
+            st.error(f"Error: {e}")
+      else:
+        st.warning("Please type a concept or problem first.")
+
+# ==========================================
+# SECTION 2: NCERT TEXTBOOK LIBRARY
+# ==========================================
+elif app_section == "📚 NCERT Textbook Library":
+  st.subheader("📖 Official NCERT Textbook Library")
+  st.markdown("Select your class and subject to directly access verified curriculum textbooks and PDFs.")
   
   col_c, col_s = st.columns(2, gap="medium")
   with col_c:
@@ -498,118 +622,3 @@ if study_mode == "📚 NCERT Textbook Reader (Class 11-12)":
             "</a>",
             unsafe_allow_html=True,
         )
-
-# ==========================================
-# MODE 2: SOCRATIC HINT INSPECTOR
-# ==========================================
-elif study_mode == "📸 Socratic Hint Inspector":
-  st.subheader("📸 Socratic Worksheet & Problem Analyzer")
-  st.markdown(
-      "Snap a photo with your camera or upload an image from your gallery. "
-      "Aspirant AI will give you conceptual hints **without** spoiling the final answer!"
-  )
-
-  input_method = st.radio(
-      "Choose Input Method", ["📁 Upload from Gallery", "📷 Capture with Camera"], horizontal=True
-  )
-
-  image = None
-  if input_method == "📁 Upload from Gallery":
-    uploaded_file = st.file_uploader("Upload question image...", type=["jpg", "jpeg", "png"])
-    if uploaded_file is not None:
-      image = Image.open(uploaded_file)
-  else:
-    camera_file = st.camera_input("Take a picture of the question/worksheet")
-    if camera_file is not None:
-      image = Image.open(camera_file)
-
-  if image is not None:
-    st.image(image, caption="Selected Problem", use_container_width=True)
-
-    buffered = io.BytesIO()
-    image.save(buffered, format=image.format if image.format else "JPEG")
-    img_bytes = buffered.getvalue()
-    encoded_image = base64.b64encode(img_bytes).decode("utf-8")
-    image_url = f"data:image/jpeg;base64,{encoded_image}"
-
-    user_hint_query = st.text_input(
-        "Any specific doubt or where are you stuck?",
-        placeholder="e.g., I'm stuck on finding the moment of inertia component here.",
-    )
-
-    if st.button("Generate Socratic Hints"):
-      HINT_PROMPT = f"""You are Aspirant AI, an expert, encouraging Socratic tutor for rigorous engineering and board exam preparation.
-      Analyze the provided image of the academic problem.
-      User's specific context/doubt: {user_hint_query}
-      
-      Provide a Socratic response:
-      1. Break down the core concepts involved (e.g., formulas, principles).
-      2. Give step-by-step guidance or guiding questions **without giving away the final answer**.
-      3. Point out any common pitfalls to avoid."""
-
-      with st.spinner("Analyzing problem via Groq vision..."):
-        try:
-          chat_completion = client.chat.completions.create(
-              model="qwen/qwen3.8-27b",
-              messages=[
-                  {
-                      "role": "user",
-                      "content": [
-                          {"type": "text", "text": HINT_PROMPT},
-                          {
-                              "type": "image_url",
-                              "image_url": {"url": image_url},
-                          },
-                      ],
-                  }
-              ],
-              max_completion_tokens=800,
-          )
-          response_text = clean_latex_output(
-              chat_completion.choices[0].message.content
-          )
-          st.markdown("### 💡 Socratic Hint Guide")
-          st.markdown(response_text)
-        except Exception as e:
-          st.error(f"Analysis failed. Raw API Error: `{e}`")
-
-# ==========================================
-# MODE 3: CONCEPT & PROBLEM SOLVER
-# ==========================================
-elif study_mode == "💡 Concept & Problem Solver":
-  st.subheader("📚 Quick Concept & Formula Breakdown")
-  st.markdown("Enter any topic or formula to get an in-depth breakdown optimized for competitive exams.")
-  
-  concept_query = st.text_input(
-      "What concept, formula, or problem text would you like to explore?",
-      placeholder="e.g., Explain the inductive effect or rotational kinematics equations.",
-  )
-
-  if st.button("Explain Concept"):
-    if concept_query:
-      with st.spinner("Drafting explanation..."):
-        try:
-          chat_completion = client.chat.completions.create(
-              model="openai/gpt-oss-120b",
-              messages=[
-                  {
-                      "role": "system",
-                      "content": (
-                          "You are Aspirant AI, an expert physics, chemistry,"
-                          " and math tutor. Provide crisp, high-signal"
-                          " explanations tailored for competitive exams."
-                      ),
-                  },
-                  {"role": "user", "content": concept_query},
-              ],
-              max_completion_tokens=1024,
-          )
-          explanation_text = clean_latex_output(
-              chat_completion.choices[0].message.content
-          )
-          st.markdown("### 📘 Explanation")
-          st.markdown(explanation_text)
-        except Exception as e:
-          st.error(f"Error: {e}")
-    else:
-      st.warning("Please type a concept or problem first.")
