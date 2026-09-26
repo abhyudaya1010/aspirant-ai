@@ -1,6 +1,7 @@
 import base64
 import io
 import os
+import re
 from groq import Groq
 from PIL import Image
 import streamlit as st
@@ -13,6 +14,20 @@ st.set_page_config(
     page_icon="🎓",
     layout="wide",
 )
+
+
+# ==========================================
+# LATEX FORMATTING HELPER
+# ==========================================
+def clean_latex_output(text):
+  """Converts raw LaTeX notations so they render cleanly in Streamlit."""
+  if not text:
+    return ""
+  # Ensure standard inline and block math render correctly
+  text = re.sub(r"\\\[(.*?)\\\]", r"$$\1$$", text, flags=re.DOTALL)
+  text = re.sub(r"\\\((.*?)\\\)", r"$\1$", text, flags=re.DOTALL)
+  return text
+
 
 # ==========================================
 # SECURE API CLIENT INITIALIZATION
@@ -104,7 +119,9 @@ if study_mode == "Socratic Hint Inspector (Image/Worksheet)":
               ],
               max_completion_tokens=800,
           )
-          response_text = chat_completion.choices[0].message.content
+          response_text = clean_latex_output(
+              chat_completion.choices[0].message.content
+          )
           st.markdown("### 💡 Socratic Hint Guide")
           st.markdown(response_text)
         except Exception as e:
@@ -139,8 +156,11 @@ elif study_mode == "Concept & Problem Solver":
               ],
               max_completion_tokens=1024,
           )
+          explanation_text = clean_latex_output(
+              chat_completion.choices[0].message.content
+          )
           st.markdown("### 📘 Explanation")
-          st.markdown(chat_completion.choices[0].message.content)
+          st.markdown(explanation_text)
         except Exception as e:
           st.error(f"Error: {e}")
     else:
