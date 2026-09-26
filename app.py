@@ -16,7 +16,6 @@ st.set_page_config(
 # ==========================================
 # SECURE API CLIENT INITIALIZATION
 # ==========================================
-# This pulls from Streamlit secrets (.streamlit/secrets.toml) or environment variables
 api_key = st.secrets.get("GROQ_API_KEY") or os.environ.get("GROQ_API_KEY", "")
 
 if not api_key:
@@ -62,7 +61,8 @@ if study_mode == "Socratic Hint Inspector (Image/Worksheet)":
 
   if uploaded_file is not None:
     image = Image.open(uploaded_file)
-    st.image(image, caption="Uploaded Problem", use_column_width=True)
+    # Fixed deprecated parameter issue
+    st.image(image, caption="Uploaded Problem", width="stretch")
 
     # Convert uploaded image to base64 data URL for the API
     import io
@@ -90,7 +90,6 @@ if study_mode == "Socratic Hint Inspector (Image/Worksheet)":
 
       with st.spinner("Analyzing problem via Groq..."):
         try:
-          # Using active Llama model configuration via Groq chat completions
           chat_completion = client.chat.completions.create(
               model="openai/gpt-oss-120b",
               messages=[
