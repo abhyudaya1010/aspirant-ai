@@ -1,4 +1,5 @@
 import base64
+import io
 import os
 from groq import Groq
 from PIL import Image
@@ -61,12 +62,9 @@ if study_mode == "Socratic Hint Inspector (Image/Worksheet)":
 
   if uploaded_file is not None:
     image = Image.open(uploaded_file)
-    # Fixed deprecated parameter issue
     st.image(image, caption="Uploaded Problem", width="stretch")
 
     # Convert uploaded image to base64 data URL for the API
-    import io
-
     buffered = io.BytesIO()
     image.save(buffered, format=image.format if image.format else "JPEG")
     img_bytes = buffered.getvalue()
@@ -88,10 +86,11 @@ if study_mode == "Socratic Hint Inspector (Image/Worksheet)":
       2. Give step-by-step guidance or guiding questions **without giving away the final answer**.
       3. Point out any common pitfalls to avoid."""
 
-      with st.spinner("Analyzing problem via Groq..."):
+      with st.spinner("Analyzing problem via Groq vision..."):
         try:
+          # Using Groq's multimodal vision model (qwen/qwen3.8-27b)
           chat_completion = client.chat.completions.create(
-              model="openai/gpt-oss-120b",
+              model="qwen/qwen3.8-27b",
               messages=[
                   {
                       "role": "user",
