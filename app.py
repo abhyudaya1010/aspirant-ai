@@ -88,7 +88,6 @@ if study_mode == "Socratic Hint Inspector (Image/Worksheet)":
 
       with st.spinner("Analyzing problem via Groq vision..."):
         try:
-          # Capped max_completion_tokens to prevent hitting free tier rate limits (OTPM)
           chat_completion = client.chat.completions.create(
               model="qwen/qwen3.8-27b",
               messages=[
@@ -126,7 +125,7 @@ elif study_mode == "Concept & Problem Solver":
       with st.spinner("Drafting explanation..."):
         try:
           chat_completion = client.chat.completions.create(
-              model="llama-3.3-70b-versatile",
+              model="openai/gpt-oss-120b",
               messages=[
                   {
                       "role": "system",
@@ -138,6 +137,7 @@ elif study_mode == "Concept & Problem Solver":
                   },
                   {"role": "user", "content": concept_query},
               ],
+              max_completion_tokens=1024,
           )
           st.markdown("### 📘 Explanation")
           st.markdown(chat_completion.choices[0].message.content)
