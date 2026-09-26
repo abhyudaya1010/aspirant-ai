@@ -451,12 +451,13 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Sidebar configuration - Clean Separation of Features
+# Sidebar configuration - Navigation
 st.sidebar.markdown("### ⚙️ Navigation")
 app_section = st.sidebar.radio(
     "Select Feature Hub",
     [
         "🤖 AI Study & Doubt Assistant",
+        "⚡ AI Formula & Revision Flashcards",
         "📚 NCERT Textbook Library",
     ],
 )
@@ -587,7 +588,60 @@ if app_section == "🤖 AI Study & Doubt Assistant":
         st.warning("Please type a concept or problem first.")
 
 # ==========================================
-# SECTION 2: NCERT TEXTBOOK LIBRARY
+# SECTION 2: AI FORMULA & REVISION FLASHCARDS (NEW FEATURE)
+# ==========================================
+elif app_section == "⚡ AI Formula & Revision Flashcards":
+  st.subheader("⚡ AI Formula & Quick Revision Deck")
+  st.markdown("Generate high-yield revision flashcards for any chapter or sub-topic to boost retention for engineering entrance and board exams.")
+
+  col_fc1, col_fc2 = st.columns(2, gap="medium")
+  with col_fc1:
+    fc_class = st.selectbox("Target Class", ["Class 11", "Class 12"], key="fc_class")
+    fc_subject = st.selectbox("Target Subject", ["Physics", "Chemistry", "Mathematics"], key="fc_subject")
+  with col_fc2:
+    fc_topic = st.text_input(
+        "Enter Chapter or Specific Topic",
+        placeholder="e.g., Rotational Motion, Integration by Parts, Chemical Kinetics",
+    )
+
+  if st.button("Generate Flashcard Deck"):
+    if fc_topic:
+      with st.spinner("Compiling high-yield revision flashcards..."):
+        FLASHCARD_PROMPT = f"""You are Aspirant AI, an expert coach for engineering entrance examinations.
+        Create a concise, high-yield revision flashcard deck for {fc_class} {fc_subject} focusing on the topic: '{fc_topic}'.
+        
+        Provide the output formatted into 4 clear flashcards:
+        1. **Core Formulas & Definitions** (Key mathematical expressions and standard constants)
+        2. **Key Concepts & Theorems** (Core principles needed to solve problems)
+        3. **Shortcuts & Tricks** (Mental models or shortcut formulas for fast problem-solving)
+        4. **Common Traps / Pitfalls** (Where students usually make mistakes)
+        
+        Use clear formatting with Markdown and LaTeX for equations."""
+
+        try:
+          chat_completion = client.chat.completions.create(
+              model="openai/gpt-oss-120b",
+              messages=[
+                  {
+                      "role": "system",
+                      "content": "You are Aspirant AI, an expert study coach for STEM competitive exams.",
+                  },
+                  {"role": "user", "content": FLASHCARD_PROMPT},
+              ],
+              max_completion_tokens=1200,
+          )
+          flashcards_text = clean_latex_output(
+              chat_completion.choices[0].message.content
+          )
+          st.markdown("### 🃏 Your Revision Flashcards")
+          st.markdown(flashcards_text)
+        except Exception as e:
+          st.error(f"Failed to generate flashcards: {e}")
+    else:
+      st.warning("Please specify a chapter or topic first.")
+
+# ==========================================
+# SECTION 3: NCERT TEXTBOOK LIBRARY
 # ==========================================
 elif app_section == "📚 NCERT Textbook Library":
   st.subheader("📖 Official NCERT Textbook Library")
