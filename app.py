@@ -2,10 +2,8 @@ import asyncio
 import io
 import os
 import sys
-import time
-from google import genai
-from google.genai import types
 from PIL import Image
+from groq import Groq
 import streamlit as st
 
 if sys.platform.startswith("win"):
@@ -14,16 +12,16 @@ if sys.platform.startswith("win"):
 st.set_page_config(page_title="Aspirant AI", layout="wide")
 
 # ==========================================
-# PASTE YOUR AQ... API KEY HERE
+# PASTE YOUR GROQ API KEY HERE (starts with gsk_...)
 # ==========================================
-DEFAULT_API_KEY = "AQ.Ab8RN6KFVqYJkcVfMAKY2bNtl_E7uCkO4KKDP_IJ4iCigv33vg"
+DEFAULT_API_KEY = "gsk_YOUR_ACTUAL_API_KEY_HERE"
 
 api_key = st.secrets.get(
-    "GEMINI_API_KEY",
-    os.getenv("GEMINI_API_KEY", DEFAULT_API_KEY if "YOUR_ACTUAL_API_KEY" not in DEFAULT_API_KEY else "")
+    "GROQ_API_KEY",
+    os.getenv("GROQ_API_KEY", DEFAULT_API_KEY if "YOUR_ACTUAL_API_KEY" not in DEFAULT_API_KEY else "")
 )
 
-client = genai.Client(api_key=api_key) if api_key else None
+client = Groq(api_key=api_key) if api_key and "YOUR_ACTUAL_API_KEY" not in api_key else None
 
 st.title("🎯 Aspirant AI")
 st.caption("Personalized engineering & academic command center.")
@@ -38,8 +36,8 @@ with st.sidebar:
       ],
   )
   st.markdown("---")
-  if not client or "YOUR_ACTUAL_API_KEY" in DEFAULT_API_KEY:
-    st.warning("⚠️ Please insert your actual `AQ...` key into `DEFAULT_API_KEY` at the top of the script.")
+  if not client:
+    st.warning("⚠️ Please insert your Groq API key into `DEFAULT_API_KEY` at the top of the script.")
 
 NCERT_FULL_DATABASE = {
     "Class 12": {
@@ -224,7 +222,7 @@ if active_feature == "📚 NCERT Textbook Reader (Class 9–12)":
 
 elif active_feature == "📸 Multi-Question Socratic Hint Inspector":
   st.subheader("📸 Multi-Question Socratic Hint Engine")
-  st.caption("Upload or snap a photo of a worksheet. Gemini detects every single question and provides core concepts and Socratic steering hints.")
+  st.caption("Upload or snap a photo of a worksheet. The engine detects every single question and provides core concepts and Socratic steering hints.")
 
   uploaded_img = st.file_uploader("Upload or snap a photo of your notebook/worksheet", type=["png", "jpg", "jpeg"])
   user_context = st.text_input("Optional context (e.g., 'Class 11 rotational dynamics sheet', or leave blank)", "")
@@ -238,9 +236,17 @@ elif active_feature == "📸 Multi-Question Socratic Hint Inspector":
 
     with col_diag:
       if st.button("💡 Give Hints for Every Question", type="primary"):
-        if not client or "YOUR_ACTUAL_API_KEY" in DEFAULT_API_KEY:
-          st.error("Please insert your actual `AQ...` key into `DEFAULT_API_KEY` at the top of the script.")
+        if not client:
+          st.error("Please configure your Groq API key at the top of the script.")
         else:
+          import base64
+
+          # Convert uploaded image to base64 data URI for Groq's multimodal input
+          buffered = io.BytesIO()
+          image.save(buffered, format="JPEG")
+          img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+          image_url = f"data:image/jpeg;base64,{img_str}"
+
           HINT_PROMPT = f"""
 You are an expert JEE Main/Advanced & Board STEM tutor. Analyze this uploaded image containing multiple questions/problems.
 User context: {user_context}
@@ -253,25 +259,23 @@ Instructions:
    - **Socratic Hint**: [Guiding question to trigger insight]
    - **First Kickstart Step**: [Exact first line/setup to begin solving]
 """
-          # Updated to the current production workhorse model gemini-3.6-flash
-          models_to_try = ["gemini-3.6-flash", "gemini-3.5-flash"]
-          response = None
-          last_error = None
 
-          with st.spinner("Generating multi-question Socratic hints..."):
-            for model_name in models_to_try:
-              try:
-                response = client.models.generate_content(
-                    model=model_name, contents=[image, HINT_PROMPT]
-                )
-                if response and hasattr(response, "text"):
-                  break
-              except Exception as e:
-                last_error = e
-                continue
-
-            if response and hasattr(response, "text"):
+          with st.spinner("Generating multi-question Socratic hints via Groq..."):
+            try:
+              chat_completion = client.chat.completions.create(
+                  model="llama-3.2-90b-vision-preview",
+                  messages=[
+                      {
+                          "role": "user",
+                          "content": [
+                              {"type": "text", "text": HINT_PROMPT},
+                              {"type": "image_url", "image_url": {"url": image_url}},
+                          ],
+                      }
+                  ],
+              )
+              response_text = chat_completion.choices[0].message.content
               st.markdown("### 💡 Multi-Question Hint Guide")
-              st.markdown(response.text)
-            else:
-              st.error(f"Analysis failed. Raw API Error: `{last_error}`")
+              st.markdown(response_text)
+            except Exception as e:
+              st.error(f"Analysis failed. Raw API Error: `{e}`")
