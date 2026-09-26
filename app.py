@@ -88,7 +88,7 @@ if study_mode == "Socratic Hint Inspector (Image/Worksheet)":
 
       with st.spinner("Analyzing problem via Groq vision..."):
         try:
-          # Using Groq's multimodal vision model (qwen/qwen3.8-27b)
+          # Capped max_completion_tokens to prevent hitting free tier rate limits (OTPM)
           chat_completion = client.chat.completions.create(
               model="qwen/qwen3.8-27b",
               messages=[
@@ -103,6 +103,7 @@ if study_mode == "Socratic Hint Inspector (Image/Worksheet)":
                       ],
                   }
               ],
+              max_completion_tokens=800,
           )
           response_text = chat_completion.choices[0].message.content
           st.markdown("### 💡 Socratic Hint Guide")
