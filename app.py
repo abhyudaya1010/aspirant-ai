@@ -538,7 +538,7 @@ if app_section == "🤖 AI Study & Doubt Assistant":
                         ],
                     }
                 ],
-                max_completion_tokens=800,
+                max_completion_tokens=3000,
             )
             response_text = clean_latex_output(
                 chat_completion.choices[0].message.content
