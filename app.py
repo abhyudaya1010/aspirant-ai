@@ -425,19 +425,29 @@ if study_mode == "📚 NCERT Textbook Reader (Class 11-12)":
 elif study_mode == "📸 Socratic Hint Inspector (Image/Worksheet)":
   st.subheader("📸 Socratic Worksheet & Problem Analyzer")
   st.markdown(
-      "Upload an image of your question or worksheet. Aspirant AI will give"
-      " you conceptual hints **without** spoiling the final answer!"
+      "Snap a photo with your camera or upload an image from your gallery. "
+      "Aspirant AI will give you conceptual hints **without** spoiling the final answer!"
   )
 
-  uploaded_file = st.file_uploader(
-      "Upload question image...", type=["jpg", "jpeg", "png"]
+  # Input method selection: Camera vs Gallery Upload
+  input_method = st.radio(
+      "Choose Input Method", ["📁 Upload from Gallery", "📷 Capture with Camera"], horizontal=True
   )
 
-  if uploaded_file is not None:
-    image = Image.open(uploaded_file)
-    st.image(image, caption="Uploaded Problem", use_container_width=True)
+  image = None
+  if input_method == "📁 Upload from Gallery":
+    uploaded_file = st.file_uploader("Upload question image...", type=["jpg", "jpeg", "png"])
+    if uploaded_file is not None:
+      image = Image.open(uploaded_file)
+  else:
+    camera_file = st.camera_input("Take a picture of the question/worksheet")
+    if camera_file is not None:
+      image = Image.open(camera_file)
 
-    # Convert uploaded image to base64 data URL for the API
+  if image is not None:
+    st.image(image, caption="Selected Problem", use_container_width=True)
+
+    # Convert image to base64 data URL for the API
     buffered = io.BytesIO()
     image.save(buffered, format=image.format if image.format else "JPEG")
     img_bytes = buffered.getvalue()
