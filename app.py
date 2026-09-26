@@ -538,7 +538,7 @@ if app_section == "🤖 AI Study & Doubt Assistant":
                         ],
                     }
                 ],
-                max_completion_tokens=3000,
+                max_completion_tokens=2000,
             )
             response_text = clean_latex_output(
                 chat_completion.choices[0].message.content
@@ -575,7 +575,7 @@ if app_section == "🤖 AI Study & Doubt Assistant":
                     },
                     {"role": "user", "content": concept_query},
                 ],
-                max_completion_tokens=1024,
+                max_completion_tokens=2500,
             )
             explanation_text = clean_latex_output(
                 chat_completion.choices[0].message.content
@@ -588,7 +588,7 @@ if app_section == "🤖 AI Study & Doubt Assistant":
         st.warning("Please type a concept or problem first.")
 
 # ==========================================
-# SECTION 2: AI FORMULA & REVISION FLASHCARDS (NEW FEATURE)
+# SECTION 2: AI FORMULA & REVISION FLASHCARDS
 # ==========================================
 elif app_section == "⚡ AI Formula & Revision Flashcards":
   st.subheader("⚡ AI Formula & Quick Revision Deck")
@@ -628,7 +628,7 @@ elif app_section == "⚡ AI Formula & Revision Flashcards":
                   },
                   {"role": "user", "content": FLASHCARD_PROMPT},
               ],
-              max_completion_tokens=1200,
+              max_completion_tokens=2500,
           )
           flashcards_text = clean_latex_output(
               chat_completion.choices[0].message.content
