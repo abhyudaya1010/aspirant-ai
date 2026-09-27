@@ -458,6 +458,7 @@ app_section = st.sidebar.radio(
     [
         "🤖 AI Study & Doubt Assistant",
         "⚡ AI Formula & Revision Flashcards",
+        "📝 Interactive Mock Test & Quiz Generator",
         "📚 NCERT Textbook Library",
     ],
 )
@@ -641,7 +642,121 @@ elif app_section == "⚡ AI Formula & Revision Flashcards":
       st.warning("Please specify a chapter or topic first.")
 
 # ==========================================
-# SECTION 3: NCERT TEXTBOOK LIBRARY
+# SECTION 3: INTERACTIVE MOCK TEST & QUIZ GENERATOR (NEW FEATURE)
+# ==========================================
+elif app_section == "📝 Interactive Mock Test & Quiz Generator":
+  st.subheader("📝 Interactive Mock Test & Quiz Generator")
+  st.markdown("Test your mastery with customized multiple-choice practice tests tailored for JEE Main and board exam levels.")
+
+  col_t1, col_t2, col_t3 = st.columns(3, gap="medium")
+  with col_t1:
+    quiz_class = st.selectbox("Target Class", ["Class 11", "Class 12"], key="quiz_class")
+  with col_t2:
+    quiz_subject = st.selectbox("Target Subject", ["Physics", "Chemistry", "Mathematics"], key="quiz_subject")
+  with col_t3:
+    quiz_difficulty = st.selectbox("Difficulty Level", ["JEE Main (Moderate)", "JEE Advanced (Hard)", "Board Exam (Standard)"], key="quiz_diff")
+
+  quiz_topic = st.text_input(
+      "Enter Chapter or Topic for the Quiz",
+      placeholder="e.g., Electrostatics, Limits and Derivatives, Chemical Bonding",
+  )
+
+  if "quiz_data" not in st.session_state:
+    st.session_state.quiz_data = None
+  if "user_answers" not in st.session_state:
+    st.session_state.user_answers = {}
+  if "quiz_submitted" not in st.session_state:
+    st.session_state.quiz_submitted = False
+
+  if st.button("Generate Practice Quiz"):
+    if quiz_topic:
+      with st.spinner("Generating custom mock test questions..."):
+        QUIZ_PROMPT = f"""You are Aspirant AI, an expert engineering entrance exam test creator.
+        Generate a 5-question multiple-choice practice quiz for {quiz_class} {quiz_subject} on the topic: '{quiz_topic}' at '{quiz_difficulty}' level.
+        
+        You MUST format your response strictly as a clear list of 5 questions. For each question, provide:
+        - **Question [Number]**: [Question text with LaTeX for math/physics expressions]
+        - **A)** [Option A]
+        - **B)** [Option B]
+        - **C)** [Option C]
+        - **D)** [Option D]
+        - **Correct Answer**: [A, B, C, or D]
+        - **Explanation**: [Step-by-step solution]
+        
+        Ensure options are clearly labeled and the correct answer and explanation are explicitly provided at the end of each question."""
+
+        try:
+          chat_completion = client.chat.completions.create(
+              model="openai/gpt-oss-120b",
+              messages=[
+                  {
+                      "role": "system",
+                      "content": "You are Aspirant AI, an expert exam creator for STEM competitive exams.",
+                  },
+                  {"role": "user", "content": QUIZ_PROMPT},
+              ],
+              max_completion_tokens=3000,
+          )
+          st.session_state.quiz_data = clean_latex_output(
+              chat_completion.choices[0].message.content
+          )
+          st.session_state.user_answers = {}
+          st.session_state.quiz_submitted = False
+        except Exception as e:
+          st.error(f"Failed to generate quiz: {e}")
+    else:
+      st.warning("Please specify a chapter or topic first.")
+
+  if st.session_state.quiz_data:
+    st.markdown("---")
+    st.markdown("### 📋 Your Custom Practice Test")
+    st.markdown(st.session_state.quiz_data)
+    
+    st.markdown("---")
+    st.markdown("### ✨ Test Submission & Evaluation")
+    st.markdown("Want an AI evaluation of your answers or want to test yourself further? Enter your selected answers below (e.g., Q1: A, Q2: C, etc.) or click below to check your solutions.")
+
+    eval_input = st.text_area(
+        "Enter your answers or any doubts on specific questions:",
+        placeholder="e.g., My answers are: 1-B, 2-C, 3-A, 4-D, 5-B. Please evaluate my score and explain any mistakes.",
+    )
+
+    if st.button("Evaluate Answers & Get Detailed Solutions"):
+      if eval_input:
+        with st.spinner("Evaluating your performance..."):
+          EVAL_PROMPT = f"""You are Aspirant AI, an expert exam coach. 
+          Here is the quiz that was generated:
+          {st.session_state.quiz_data}
+          
+          Here are the user's submitted answers / notes:
+          {eval_input}
+          
+          Please grade the user's answers against the correct answers, calculate their total score out of 5, and provide detailed step-by-step corrections for any incorrect answers."""
+
+          try:
+            eval_completion = client.chat.completions.create(
+                model="openai/gpt-oss-120b",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are Aspirant AI, an expert tutor grading mock tests.",
+                    },
+                    {"role": "user", "content": EVAL_PROMPT},
+                ],
+                max_completion_tokens=2000,
+            )
+            eval_result = clean_latex_output(
+                eval_completion.choices[0].message.content
+            )
+            st.markdown("### 📊 Performance Report & Solutions")
+            st.markdown(eval_result)
+          except Exception as e:
+            st.error(f"Evaluation failed: {e}")
+      else:
+        st.warning("Please enter your answers before submitting for evaluation.")
+
+# ==========================================
+# SECTION 4: NCERT TEXTBOOK LIBRARY
 # ==========================================
 elif app_section == "📚 NCERT Textbook Library":
   st.subheader("📖 Official NCERT Textbook Library")
