@@ -167,19 +167,19 @@ st.markdown("""
 
 # Initialize Session State for Quick Voice Mode Toggle
 if "voice_modal_active" not in st.session_state:
-  st.session_state.voice_modal_active = False
+    st.session_state.voice_modal_active = False
 
 
 # ==========================================
 # LATEX FORMATTING HELPER
 # ==========================================
 def clean_latex_output(text):
-  """Converts raw LaTeX notations so they render cleanly in Streamlit."""
-  if not text:
-    return ""
-  text = re.sub(r"\\\[(.*?)\\\]", r"$$\1$$", text, flags=re.DOTALL)
-  text = re.sub(r"\\\((.*?)\\\)", r"$\1$", text, flags=re.DOTALL)
-  return text
+    """Converts raw LaTeX notations so they render cleanly in Streamlit."""
+    if not text:
+        return ""
+    text = re.sub(r"\\\[(.*?)\\\]", r"$$\1$$", text, flags=re.DOTALL)
+    text = re.sub(r"\\\((.*?)\\\)", r"$\1$", text, flags=re.DOTALL)
+    return text
 
 
 # ==========================================
@@ -188,10 +188,10 @@ def clean_latex_output(text):
 api_key = st.secrets.get("GROQ_API_KEY") or os.environ.get("GROQ_API_KEY", "")
 
 if not api_key:
-  st.error(
-      "⚠️ Groq API Key not found! Please configure it in your `.streamlit/secrets.toml` file."
-  )
-  st.stop()
+    st.error(
+        "⚠️ Groq API Key not found! Please configure it in your `.streamlit/secrets.toml` file."
+    )
+    st.stop()
 
 client = Groq(api_key=api_key)
 
@@ -444,10 +444,7 @@ NCERT_FULL_DATABASE = {
                 "url": "https://ncert.nic.in/textbook/pdf/kech107.pdf",
             },
             {
-                "name": (
-                    "Ch 8: Organic Chemistry - Some Basic Principles &"
-                    " Techniques"
-                ),
+                "name": "Ch 8: Organic Chemistry - Some Basic Principles & Techniques",
                 "url": "https://ncert.nic.in/textbook/pdf/kech108.pdf",
             },
             {
@@ -497,9 +494,7 @@ NCERT_FULL_DATABASE = {
                 "url": "https://ncert.nic.in/textbook/pdf/kemh110.pdf",
             },
             {
-                "name": (
-                    "Ch 11: Introduction to Three Dimensional Geometry"
-                ),
+                "name": "Ch 11: Introduction to Three Dimensional Geometry",
                 "url": "https://ncert.nic.in/textbook/pdf/kemh111.pdf",
             },
             {
@@ -549,459 +544,455 @@ app_section = st.sidebar.radio(
 # ==========================================
 st.markdown('<div class="floating-robot-wrapper">', unsafe_allow_html=True)
 if st.button("", help="Click to open AI Voice Doubt Solver!"):
-  st.session_state.voice_modal_active = not st.session_state.voice_modal_active
+    st.session_state.voice_modal_active = not st.session_state.voice_modal_active
 st.markdown("</div>", unsafe_allow_html=True)
 
 # Floating Voice Modal Card Popup
 if st.session_state.voice_modal_active:
-  st.markdown('<div class="floating-modal-backdrop">', unsafe_allow_html=True)
-  with st.container():
-    st.markdown("""
-        <div>
-            <h3 style="color: white; margin-top: 0; margin-bottom: 4px; font-size: 1.15rem;">🎙️ AI Voice & Dictation Assistant</h3>
-            <p style="color: #94A3B8; font-size: 0.85rem; margin-bottom: 12px;">Dictate or type your doubt for an instant breakdown.</p>
-        </div>
-        """, unsafe_allow_html=True)
+    st.markdown('<div class="floating-modal-backdrop">', unsafe_allow_html=True)
+    with st.container():
+        st.markdown("""
+            <div>
+                <h3 style="color: white; margin-top: 0; margin-bottom: 4px; font-size: 1.15rem;">🎙️ AI Voice & Dictation Assistant</h3>
+                <p style="color: #94A3B8; font-size: 0.85rem; margin-bottom: 12px;">Dictate or type your doubt for an instant breakdown.</p>
+            </div>
+            """, unsafe_allow_html=True)
 
-    voice_doubt_input = st.text_area(
-        "Dictate or type your problem description:",
-        placeholder=(
-            "e.g., What is the condition for maximum power transfer?"
-        ),
-        key="floating_voice_input",
-        label_visibility="collapsed",
-    )
+        voice_doubt_input = st.text_area(
+            "Dictate or type your problem description:",
+            placeholder=(
+                "e.g., What is the condition for maximum power transfer?"
+            ),
+            key="floating_voice_input",
+            label_visibility="collapsed",
+        )
 
-    col_vm1, col_vm2 = st.columns(2)
-    with col_vm1:
-      solve_floating_btn = st.button(
-          "🚀 Solve Doubt", key="floating_solve_btn", use_container_width=True
-      )
-    with col_vm2:
-      close_floating_btn = st.button(
-          "❌ Close", key="close_modal_btn", use_container_width=True
-      )
-
-    if close_floating_btn:
-      st.session_state.voice_modal_active = False
-      st.rerun()
-
-    if solve_floating_btn:
-      if voice_doubt_input:
-        with st.spinner("Resolving..."):
-          VOICE_PROMPT = f"""You are Aspirant AI, an expert physics, chemistry, and mathematics tutor for engineering entrance exams.
-            A student has asked the following question via voice dictation:
-            '{voice_doubt_input}'
-            
-            Provide a structured, rigorous, yet intuitive explanation:
-            1. **Core Concept Overview**: Briefly define the main principle.
-            2. **Step-by-Step Breakdown**: Clear mathematical or conceptual steps using LaTeX.
-            3. **Key Takeaway / Formula**: The ultimate result to remember for exams."""
-
-          try:
-            chat_completion = client.chat.completions.create(
-                model="openai/gpt-oss-120b",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": (
-                            "You are Aspirant AI, an expert tutor for STEM"
-                            " competitive exams."
-                        ),
-                    },
-                    {"role": "user", "content": VOICE_PROMPT},
-                ],
-                max_completion_tokens=2000,
+        col_vm1, col_vm2 = st.columns(2)
+        with col_vm1:
+            solve_floating_btn = st.button(
+                "🚀 Solve Doubt", key="floating_solve_btn", use_container_width=True
             )
-            voice_response = clean_latex_output(
-                chat_completion.choices[0].message.content
+        with col_vm2:
+            close_floating_btn = st.button(
+                "❌ Close", key="close_modal_btn", use_container_width=True
             )
-            st.markdown('<div class="floating-answer-box">', unsafe_allow_html=True)
-            st.markdown("**Answer & Explanation:**")
-            st.markdown(voice_response)
-            st.markdown("</div>", unsafe_allow_html=True)
-          except Exception as e:
-            st.error(f"Failed to generate explanation: {e}")
-      else:
-        st.warning("Please dictate or type your doubt first.")
-  st.markdown("</div>", unsafe_allow_html=True)
+
+        if close_floating_btn:
+            st.session_state.voice_modal_active = False
+            st.rerun()
+
+        if solve_floating_btn:
+            if voice_doubt_input:
+                with st.spinner("Resolving..."):
+                    VOICE_PROMPT = f"""You are Aspirant AI, an expert physics, chemistry, and mathematics tutor for engineering entrance exams.
+                    A student has asked the following question via voice dictation:
+                    '{voice_doubt_input}'
+                    
+                    Provide a structured, rigorous, yet intuitive explanation:
+                    1. **Core Concept Overview**: Briefly define the main principle.
+                    2. **Step-by-Step Breakdown**: Clear mathematical or conceptual steps using LaTeX.
+                    3. **Key Takeaway / Formula**: The ultimate result to remember for exams."""
+
+                    try:
+                        chat_completion = client.chat.completions.create(
+                            model="openai/gpt-oss-120b",
+                            messages=[
+                                {
+                                    "role": "system",
+                                    "content": (
+                                        "You are Aspirant AI, an expert tutor for STEM competitive exams."
+                                    ),
+                                },
+                                {"role": "user", "content": VOICE_PROMPT},
+                            ],
+                            max_completion_tokens=2000,
+                        )
+                        voice_response = clean_latex_output(
+                            chat_completion.choices[0].message.content
+                        )
+                        st.markdown('<div class="floating-answer-box">', unsafe_allow_html=True)
+                        st.markdown("**Answer & Explanation:**")
+                        st.markdown(voice_response)
+                        st.markdown("</div>", unsafe_allow_html=True)
+                    except Exception as e:
+                        st.error(f"Failed to generate explanation: {e}")
+            else:
+                st.warning("Please dictate or type your doubt first.")
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # ==========================================
 # SECTION 1: AI STUDY & DOUBT ASSISTANT
 # ==========================================
 if app_section == "🤖 AI Study & Doubt Assistant":
-  st.subheader("🤖 AI Study & Doubt Assistant")
-  st.markdown("Choose whether you want to analyze a worksheet image with Socratic hints or break down a difficult concept.")
+    st.subheader("🤖 AI Study & Doubt Assistant")
+    st.markdown("Choose whether you want to analyze a worksheet image with Socratic hints or break down a difficult concept.")
 
-  assistant_mode = st.selectbox(
-      "Select Assistant Tool",
-      [
-          "📸 Socratic Hint Inspector (Camera / Gallery)",
-          "💡 Concept & Formula Solver",
-      ],
-  )
-
-  st.markdown("---")
-
-  # Sub-mode 1: Socratic Hint Inspector
-  if assistant_mode == "📸 Socratic Hint Inspector (Camera / Gallery)":
-    st.markdown("### 📸 Worksheet & Problem Analyzer")
-    st.markdown("Snap a photo or upload an image. Aspirant AI will guide you step-by-step **without** giving away the final answer!")
-
-    input_method = st.radio(
-        "Choose Input Method", ["📁 Upload from Gallery", "📷 Capture with Camera"], horizontal=True
+    assistant_mode = st.selectbox(
+        "Select Assistant Tool",
+        [
+            "📸 Socratic Hint Inspector (Camera / Gallery)",
+            "💡 Concept & Formula Solver",
+        ],
     )
 
-    image = None
-    if input_method == "📁 Upload from Gallery":
-      uploaded_file = st.file_uploader("Upload question image...", type=["jpg", "jpeg", "png"])
-      if uploaded_file is not None:
-        image = Image.open(uploaded_file)
-    else:
-      camera_file = st.camera_input("Take a picture of the question/worksheet")
-      if camera_file is not None:
-        image = Image.open(camera_file)
+    st.markdown("---")
 
-    if image is not None:
-      st.image(image, caption="Selected Problem", use_container_width=True)
+    # Sub-mode 1: Socratic Hint Inspector
+    if assistant_mode == "📸 Socratic Hint Inspector (Camera / Gallery)":
+        st.markdown("### 📸 Worksheet & Problem Analyzer")
+        st.markdown("Snap a photo or upload an image. Aspirant AI will guide you step-by-step **without** giving away the final answer!")
 
-      buffered = io.BytesIO()
-      image.save(buffered, format=image.format if image.format else "JPEG")
-      img_bytes = buffered.getvalue()
-      encoded_image = base64.b64encode(img_bytes).decode("utf-8")
-      image_url = f"data:image/jpeg;base64,{encoded_image}"
+        input_method = st.radio(
+            "Choose Input Method", ["📁 Upload from Gallery", "📷 Capture with Camera"], horizontal=True
+        )
 
-      user_hint_query = st.text_input(
-          "Any specific doubt or where are you stuck?",
-          placeholder="e.g., I'm stuck on finding the moment of inertia component here.",
-      )
+        image = None
+        if input_method == "📁 Upload from Gallery":
+            uploaded_file = st.file_uploader("Upload question image...", type=["jpg", "jpeg", "png"])
+            if uploaded_file is not None:
+                image = Image.open(uploaded_file)
+        else:
+            camera_file = st.camera_input("Take a picture of the question/worksheet")
+            if camera_file is not None:
+                image = Image.open(camera_file)
 
-      if st.button("Generate Socratic Hints"):
-        HINT_PROMPT = f"""You are Aspirant AI, an expert, encouraging Socratic tutor for rigorous engineering and board exam preparation.
-        Analyze the provided image of the academic problem.
-        User's specific context/doubt: {user_hint_query}
+        if image is not None:
+            st.image(image, caption="Selected Problem", use_container_width=True)
+
+            buffered = io.BytesIO()
+            image.save(buffered, format=image.format if image.format else "JPEG")
+            img_bytes = buffered.getvalue()
+            encoded_image = base64.b64encode(img_bytes).decode("utf-8")
+            image_url = f"data:image/jpeg;base64,{encoded_image}"
+
+            user_hint_query = st.text_input(
+                "Any specific doubt or where are you stuck?",
+                placeholder="e.g., I'm stuck on finding the moment of inertia component here.",
+            )
+
+            if st.button("Generate Socratic Hints"):
+                HINT_PROMPT = f"""You are Aspirant AI, an expert, encouraging Socratic tutor for rigorous engineering and board exam preparation.
+                Analyze the provided image of the academic problem.
+                User's specific context/doubt: {user_hint_query}
+                
+                Provide a Socratic response:
+                1. Break down the core concepts involved (e.g., formulas, principles).
+                2. Give step-by-step guidance or guiding questions **without giving away the final answer**.
+                3. Point out any common pitfalls to avoid."""
+
+                with st.spinner("Analyzing problem via Groq vision..."):
+                    try:
+                        chat_completion = client.chat.completions.create(
+                            model="qwen/qwen2-vl-7b-instruct",
+                            messages=[
+                                {
+                                    "role": "user",
+                                    "content": [
+                                        {"type": "text", "text": HINT_PROMPT},
+                                        {
+                                            "type": "image_url",
+                                            "image_url": {"url": image_url},
+                                        },
+                                    ],
+                                }
+                            ],
+                            max_completion_tokens=2000,
+                        )
+                        response_text = clean_latex_output(
+                            chat_completion.choices[0].message.content
+                        )
+                        st.markdown("### 💡 Socratic Hint Guide")
+                        st.markdown(response_text)
+                    except Exception as e:
+                        st.error(f"Analysis failed. Raw API Error: `{e}`")
+
+    # Sub-mode 2: Concept & Problem Solver
+    elif assistant_mode == "💡 Concept & Formula Solver":
+        st.markdown("### 💡 Concept & Formula Breakdown")
+        st.markdown("Enter any topic, formula, or specific question to get an in-depth explanation tailored for competitive exams.")
         
-        Provide a Socratic response:
-        1. Break down the core concepts involved (e.g., formulas, principles).
-        2. Give step-by-step guidance or guiding questions **without giving away the final answer**.
-        3. Point out any common pitfalls to avoid."""
+        concept_query = st.text_input(
+            "What concept or problem text would you like to explore?",
+            placeholder="e.g., Explain the inductive effect or rotational kinematics equations.",
+        )
 
-        with st.spinner("Analyzing problem via Groq vision..."):
-          try:
-            chat_completion = client.chat.completions.create(
-                model="qwen/qwen3.8-27b",
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": HINT_PROMPT},
-                            {
-                                "type": "image_url",
-                                "image_url": {"url": image_url},
-                            },
-                        ],
-                    }
-                ],
-                max_completion_tokens=2000,
-            )
-            response_text = clean_latex_output(
-                chat_completion.choices[0].message.content
-            )
-            st.markdown("### 💡 Socratic Hint Guide")
-            st.markdown(response_text)
-          except Exception as e:
-            st.error(f"Analysis failed. Raw API Error: `{e}`")
-
-  # Sub-mode 2: Concept & Problem Solver
-  elif assistant_mode == "💡 Concept & Formula Solver":
-    st.markdown("### 💡 Concept & Formula Breakdown")
-    st.markdown("Enter any topic, formula, or specific question to get an in-depth explanation tailored for competitive exams.")
-    
-    concept_query = st.text_input(
-        "What concept or problem text would you like to explore?",
-        placeholder="e.g., Explain the inductive effect or rotational kinematics equations.",
-    )
-
-    if st.button("Explain Concept"):
-      if concept_query:
-        with st.spinner("Drafting explanation..."):
-          try:
-            chat_completion = client.chat.completions.create(
-                model="openai/gpt-oss-120b",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": (
-                            "You are Aspirant AI, an expert physics, chemistry,"
-                            " and math tutor. Provide crisp, high-signal"
-                            " explanations tailored for competitive exams."
-                        ),
-                    },
-                    {"role": "user", "content": concept_query},
-                ],
-                max_completion_tokens=2500,
-            )
-            explanation_text = clean_latex_output(
-                chat_completion.choices[0].message.content
-            )
-            st.markdown("### 📘 Explanation")
-            st.markdown(explanation_text)
-          except Exception as e:
-            st.error(f"Error: {e}")
-      else:
-        st.warning("Please type a concept or problem first.")
+        if st.button("Explain Concept"):
+            if concept_query:
+                with st.spinner("Drafting explanation..."):
+                    try:
+                        chat_completion = client.chat.completions.create(
+                            model="openai/gpt-oss-120b",
+                            messages=[
+                                {
+                                    "role": "system",
+                                    "content": (
+                                        "You are Aspirant AI, an expert physics, chemistry,"
+                                        " and math tutor. Provide crisp, high-signal"
+                                        " explanations tailored for competitive exams."
+                                    ),
+                                },
+                                {"role": "user", "content": concept_query},
+                            ],
+                            max_completion_tokens=2500,
+                        )
+                        explanation_text = clean_latex_output(
+                            chat_completion.choices[0].message.content
+                        )
+                        st.markdown("### 📘 Explanation")
+                        st.markdown(explanation_text)
+                    except Exception as e:
+                        st.error(f"Error: {e}")
+            else:
+                st.warning("Please type a concept or problem first.")
 
 # ==========================================
 # SECTION 2: AI FORMULA & REVISION FLASHCARDS
 # ==========================================
 elif app_section == "⚡ AI Formula & Revision Flashcards":
-  st.subheader("⚡ AI Formula & Quick Revision Deck")
-  st.markdown("Generate high-yield revision flashcards for any chapter or sub-topic to boost retention for engineering entrance and board exams.")
+    st.subheader("⚡ AI Formula & Quick Revision Deck")
+    st.markdown("Generate high-yield revision flashcards for any chapter or sub-topic to boost retention for engineering entrance and board exams.")
 
-  col_fc1, col_fc2 = st.columns(2, gap="medium")
-  with col_fc1:
-    fc_class = st.selectbox("Target Class", ["Class 11", "Class 12"], key="fc_class")
-    fc_subject = st.selectbox("Target Subject", ["Physics", "Chemistry", "Mathematics"], key="fc_subject")
-  with col_fc2:
-    fc_topic = st.text_input(
-        "Enter Chapter or Specific Topic",
-        placeholder="e.g., Rotational Motion, Integration by Parts, Chemical Kinetics",
-    )
+    col_fc1, col_fc2 = st.columns(2, gap="medium")
+    with col_fc1:
+        fc_class = st.selectbox("Target Class", ["Class 11", "Class 12"], key="fc_class")
+        fc_subject = st.selectbox("Target Subject", ["Physics", "Chemistry", "Mathematics"], key="fc_subject")
+    with col_fc2:
+        fc_topic = st.text_input(
+            "Enter Chapter or Specific Topic",
+            placeholder="e.g., Rotational Motion, Integration by Parts, Chemical Kinetics",
+        )
 
-  if st.button("Generate Flashcard Deck"):
-    if fc_topic:
-      with st.spinner("Compiling high-yield revision flashcards..."):
-        FLASHCARD_PROMPT = f"""You are Aspirant AI, an expert coach for engineering entrance examinations.
-        Create a concise, high-yield revision flashcard deck for {fc_class} {fc_subject} focusing on the topic: '{fc_topic}'.
-        
-        Provide the output formatted into 4 clear flashcards:
-        1. **Core Formulas & Definitions** (Key mathematical expressions and standard constants)
-        2. **Key Concepts & Theorems** (Core principles needed to solve problems)
-        3. **Shortcuts & Tricks** (Mental models or shortcut formulas for fast problem-solving)
-        4. **Common Traps / Pitfalls** (Where students usually make mistakes)
-        
-        Use clear formatting with Markdown and LaTeX for equations."""
+    if st.button("Generate Flashcard Deck"):
+        if fc_topic:
+            with st.spinner("Compiling high-yield revision flashcards..."):
+                FLASHCARD_PROMPT = f"""You are Aspirant AI, an expert coach for engineering entrance examinations.
+                Create a concise, high-yield revision flashcard deck for {fc_class} {fc_subject} focusing on the topic: '{fc_topic}'.
+                
+                Provide the output formatted into 4 clear flashcards:
+                1. **Core Formulas & Definitions** (Key mathematical expressions and standard constants)
+                2. **Key Concepts & Theorems** (Core principles needed to solve problems)
+                3. **Shortcuts & Tricks** (Mental models or shortcut formulas for fast problem-solving)
+                4. **Common Traps / Pitfalls** (Where students usually make mistakes)
+                
+                Use clear formatting with Markdown and LaTeX for equations."""
 
-        try:
-          chat_completion = client.chat.completions.create(
-              model="openai/gpt-oss-120b",
-              messages=[
-                  {
-                      "role": "system",
-                      "content": "You are Aspirant AI, an expert study coach for STEM competitive exams.",
-                  },
-                  {"role": "user", "content": FLASHCARD_PROMPT},
-              ],
-              max_completion_tokens=2500,
-          )
-          flashcards_text = clean_latex_output(
-              chat_completion.choices[0].message.content
-          )
-          st.markdown("### 🃏 Your Revision Flashcards")
-          st.markdown(flashcards_text)
-        except Exception as e:
-          st.error(f"Failed to generate flashcards: {e}")
-    else:
-      st.warning("Please specify a chapter or topic first.")
+                try:
+                    chat_completion = client.chat.completions.create(
+                        model="openai/gpt-oss-120b",
+                        messages=[
+                            {
+                                "role": "system",
+                                "content": "You are Aspirant AI, an expert study coach for STEM competitive exams.",
+                            },
+                            {"role": "user", "content": FLASHCARD_PROMPT},
+                        ],
+                        max_completion_tokens=2500,
+                    )
+                    flashcards_text = clean_latex_output(
+                        chat_completion.choices[0].message.content
+                    )
+                    st.markdown("### 🃏 Your Revision Flashcards")
+                    st.markdown(flashcards_text)
+                except Exception as e:
+                    st.error(f"Failed to generate flashcards: {e}")
+        else:
+            st.warning("Please specify a chapter or topic first.")
 
 # ==========================================
 # SECTION 3: INTERACTIVE MOCK TEST & QUIZ GENERATOR
 # ==========================================
 elif app_section == "📝 Interactive Mock Test & Quiz Generator":
-  st.subheader("📝 Interactive Mock Test & Quiz Generator")
-  st.markdown("Test your mastery with customized multiple-choice practice tests tailored for JEE Main and board exam levels.")
+    st.subheader("📝 Interactive Mock Test & Quiz Generator")
+    st.markdown("Test your mastery with customized multiple-choice practice tests tailored for JEE Main and board exam levels.")
 
-  col_t1, col_t2, col_t3 = st.columns(3, gap="medium")
-  with col_t1:
-    quiz_class = st.selectbox("Target Class", ["Class 11", "Class 12"], key="quiz_class")
-  with col_t2:
-    quiz_subject = st.selectbox("Target Subject", ["Physics", "Chemistry", "Mathematics"], key="quiz_subject")
-  with col_t3:
-    quiz_difficulty = st.selectbox("Difficulty Level", ["JEE Main (Moderate)", "JEE Advanced (Hard)", "Board Exam (Standard)"], key="quiz_diff")
+    col_t1, col_t2, col_t3 = st.columns(3, gap="medium")
+    with col_t1:
+        quiz_class = st.selectbox("Target Class", ["Class 11", "Class 12"], key="quiz_class")
+    with col_t2:
+        quiz_subject = st.selectbox("Target Subject", ["Physics", "Chemistry", "Mathematics"], key="quiz_subject")
+    with col_t3:
+        quiz_difficulty = st.selectbox("Difficulty Level", ["JEE Main (Moderate)", "JEE Advanced (Hard)", "Board Exam (Standard)"], key="quiz_diff")
 
-  quiz_topic = st.text_input(
-      "Enter Chapter or Topic for the Quiz",
-      placeholder="e.g., Electrostatics, Limits and Derivatives, Chemical Bonding",
-  )
-
-  if "quiz_data" not in st.session_state:
-    st.session_state.quiz_data = None
-  if "user_answers" not in st.session_state:
-    st.session_state.user_answers = {}
-  if "quiz_submitted" not in st.session_state:
-    st.session_state.quiz_submitted = False
-
-  if st.button("Generate Practice Quiz"):
-    if quiz_topic:
-      with st.spinner("Generating custom mock test questions..."):
-        QUIZ_PROMPT = f"""You are Aspirant AI, an expert engineering entrance exam test creator.
-        Generate a 5-question multiple-choice practice quiz for {quiz_class} {quiz_subject} on the topic: '{quiz_topic}' at '{quiz_difficulty}' level.
-        
-        You MUST format your response strictly as a clear list of 5 questions. For each question, provide:
-        - **Question [Number]**: [Question text with LaTeX for math/physics expressions]
-        - **A)** [Option A]
-        - **B)** [Option B]
-        - **C)** [Option C]
-        - **D)** [Option D]
-        - **Correct Answer**: [A, B, C, or D]
-        - **Explanation**: [Step-by-step solution]
-        
-        Ensure options are clearly labeled and the correct answer and explanation are explicitly provided at the end of each question."""
-
-        try:
-          chat_completion = client.chat.completions.create(
-              model="openai/gpt-oss-120b",
-              messages=[
-                  {
-                      "role": "system",
-                      "content": "You are Aspirant AI, an expert exam creator for STEM competitive exams.",
-                  },
-                  {"role": "user", "content": QUIZ_PROMPT},
-              ],
-              max_completion_tokens=3000,
-          )
-          st.session_state.quiz_data = clean_latex_output(
-              chat_completion.choices[0].message.content
-          )
-          st.session_state.user_answers = {}
-          st.session_state.quiz_submitted = False
-        except Exception as e:
-          st.error(f"Failed to generate quiz: {e}")
-    else:
-      st.warning("Please specify a chapter or topic first.")
-
-  if st.session_state.quiz_data:
-    st.markdown("---")
-    st.markdown("### 📋 Your Custom Practice Test")
-    st.markdown(st.session_state.quiz_data)
-    
-    st.markdown("---")
-    st.markdown("### ✨ Test Submission & Evaluation")
-    st.markdown("Want an AI evaluation of your answers or want to test yourself further? Enter your selected answers below (e.g., Q1: A, Q2: C, etc.) or click below to check your solutions.")
-
-    eval_input = st.text_area(
-        "Enter your answers or any doubts on specific questions:",
-        placeholder="e.g., My answers are: 1-B, 2-C, 3-A, 4-D, 5-B. Please evaluate my score and explain any mistakes.",
+    quiz_topic = st.text_input(
+        "Enter Chapter or Topic for the Quiz",
+        placeholder="e.g., Electrostatics, Limits and Derivatives, Chemical Bonding",
     )
 
-    if st.button("Evaluate Answers & Get Detailed Solutions"):
-      if eval_input:
-        with st.spinner("Evaluating your performance..."):
-          EVAL_PROMPT = f"""You are Aspirant AI, an expert exam coach. 
-          Here is the quiz that was generated:
-          {st.session_state.quiz_data}
-          
-          Here are the user's submitted answers / notes:
-          {eval_input}
-          
-          Please grade the user's answers against the correct answers, calculate their total score out of 5, and provide detailed step-by-step corrections for any incorrect answers."""
+    if "quiz_data" not in st.session_state:
+        st.session_state.quiz_data = None
+    if "user_answers" not in st.session_state:
+        st.session_state.user_answers = {}
+    if "quiz_submitted" not in st.session_state:
+        st.session_state.quiz_submitted = False
 
-          try:
-            eval_completion = client.chat.completions.create(
-                model="openai/gpt-oss-120b",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are Aspirant AI, an expert tutor grading mock tests.",
-                    },
-                    {"role": "user", "content": EVAL_PROMPT},
-                ],
-                max_completion_tokens=2000,
+    if st.button("Generate Practice Quiz"):
+        if quiz_topic:
+            with st.spinner("Generating custom mock test questions..."):
+                QUIZ_PROMPT = f"""You are Aspirant AI, an expert engineering entrance exam test creator.
+                Generate a 5-question multiple-choice practice quiz for {quiz_class} {quiz_subject} on the topic: '{quiz_topic}' at '{quiz_difficulty}' level.
+                
+                Format your output as valid JSON matching this exact structure, with no markdown code blocks outside or extra text:
+                [
+                  {{
+                    "question_number": 1,
+                    "question": "Question text here with LaTeX if needed",
+                    "options": ["A) ...", "B) ...", "C) ...", "D) ..."],
+                    "correct_answer": "A",
+                    "explanation": "Detailed step-by-step solution here"
+                  }}
+                ]"""
+
+                try:
+                    chat_completion = client.chat.completions.create(
+                        model="openai/gpt-oss-120b",
+                        messages=[
+                            {
+                                "role": "system",
+                                "content": "You are a JSON-only API that outputs valid JSON array of questions.",
+                            },
+                            {"role": "user", "content": QUIZ_PROMPT},
+                        ],
+                        max_completion_tokens=3000,
+                    )
+                    raw_content = chat_completion.choices[0].message.content.strip()
+                    # Clean markdown code block if present
+                    if raw_content.startswith("```"):
+                        raw_content = re.sub(r"^```(?:json)?\s*", "", raw_content)
+                        raw_content = re.sub(r"\s*```$", "", raw_content)
+
+                    import json
+                    st.session_state.quiz_data = json.loads(raw_content)
+                    st.session_state.user_answers = {}
+                    st.session_state.quiz_submitted = False
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Failed to generate quiz JSON: {e}")
+        else:
+            st.warning("Please enter a chapter or topic for the quiz.")
+
+    # Render Active Quiz
+    if st.session_state.quiz_data:
+        st.markdown("---")
+        st.markdown("### 📋 Quiz in Progress")
+        
+        for idx, q in enumerate(st.session_state.quiz_data):
+            st.markdown(f"**Q{idx+1}: {clean_latex_output(q['question'])}**")
+            
+            # Extract option keys/values
+            options = q["options"]
+            selected_option = st.radio(
+                f"Select your answer for Q{idx+1}:",
+                options,
+                key=f"q_{idx}",
+                index=None if f"q_{idx}" not in st.session_state.user_answers else options.index(st.session_state.user_answers[f"q_{idx}"])
             )
-            eval_result = clean_latex_output(
-                eval_completion.choices[0].message.content
-            )
-            st.markdown("### 📊 Performance Report & Solutions")
-            st.markdown(eval_result)
-          except Exception as e:
-            st.error(f"Evaluation failed: {e}")
-      else:
-        st.warning("Please enter your answers before submitting for evaluation.")
+            if selected_option:
+                st.session_state.user_answers[f"q_{idx}"] = selected_option
+            st.markdown("---")
+
+        col_sub1, col_sub2 = st.columns(2)
+        with col_sub1:
+            if st.button("📤 Submit Quiz & View Score"):
+                st.session_state.quiz_submitted = True
+                st.rerun()
+        with col_sub2:
+            if st.button("🔄 Reset Quiz"):
+                st.session_state.quiz_data = None
+                st.session_state.user_answers = {}
+                st.session_state.quiz_submitted = False
+                st.rerun()
+
+    # Show Results if Submitted
+    if st.session_state.quiz_submitted and st.session_state.quiz_data:
+        st.markdown("### 📊 Quiz Results & Solutions")
+        score = 0
+        total = len(st.session_state.quiz_data)
+
+        for idx, q in enumerate(st.session_state.quiz_data):
+            user_ans = st.session_state.user_answers.get(f"q_{idx}", "")
+            correct_letter = q["correct_answer"].strip().upper()
+            
+            # Check if user answer starts with correct letter (e.g., "A) ...")
+            is_correct = False
+            if user_ans and user_ans.strip().startswith(correct_letter):
+                is_correct = True
+
+            if is_correct:
+                score += 1
+                st.success(f"**Q{idx+1}: Correct!** 🎉")
+            else:
+                st.error(f"**Q{idx+1}: Incorrect.** (Your answer: {user_ans or 'None'})")
+
+            st.markdown(f"**Correct Answer Option:** `{q['correct_answer']}`")
+            st.markdown(f"**Explanation:** {clean_latex_output(q['explanation'])}")
+            st.markdown("---")
+
+        st.metric(label="Final Score", value=f"{score} / {total} ({int((score/total)*100)}%)")
 
 # ==========================================
 # SECTION 4: VOICE-ASSISTED DOUBT SOLVER
 # ==========================================
 elif app_section == "🎙️ Voice-Assisted Doubt Solver":
-  st.subheader("🎙️ Voice & Dictation Doubt Solver")
-  st.markdown("Dictate your physics, chemistry, or mathematics questions directly via voice input (or type them) to receive instant, crystal-clear explanations.")
+    st.subheader("🎙️ Voice-Assisted & Text Doubt Solver")
+    st.markdown("Speak or type any difficult physics, chemistry, or math concept to receive a structured breakdown.")
 
-  voice_doubt_input = st.text_area(
-      "Dictate or type your problem description:",
-      placeholder="e.g., What is the condition for maximum power transfer in a DC circuit, and how is it derived?",
-      help="You can use your browser/device voice-to-text keyboard dictation feature to speak your doubt directly into this box!",
-  )
+    doubt_input = st.text_area(
+        "Type or dictate your doubt here:",
+        placeholder="e.g., Explain why the terminal velocity of a spherical body depends on the square of its radius.",
+        height=120,
+    )
 
-  col_v1, col_v2 = st.columns([1, 4], vertical_alignment="center")
-  with col_v1:
-    solve_voice_btn = st.button("Solve Doubt")
+    if st.button("Solve Doubt"):
+        if doubt_input:
+            with st.spinner("Generating expert solution..."):
+                SOLVER_PROMPT = f"""You are Aspirant AI, an expert tutor for engineering entrance exams.
+                Provide a structured, rigorous explanation for the following student doubt:
+                '{doubt_input}'
+                
+                Structure your response as follows:
+                1. **Core Concept Overview**: Define the primary principle or law.
+                2. **Detailed Derivation / Explanation**: Step-by-step mathematical/conceptual derivation using LaTeX.
+                3. **Formula & Key Takeaway**: The core result to remember for exams."""
 
-  if solve_voice_btn:
-    if voice_doubt_input:
-      with st.spinner("Resolving your doubt..."):
-        VOICE_PROMPT = f"""You are Aspirant AI, an expert physics, chemistry, and mathematics tutor for engineering entrance exams.
-        A student has asked the following question via voice dictation:
-        '{voice_doubt_input}'
-        
-        Provide a structured, rigorous, yet intuitive explanation:
-        1. **Core Concept Overview**: Briefly define the main principle.
-        2. **Step-by-Step Breakdown / Derivation**: Clear mathematical or conceptual steps using LaTeX.
-        3. **Key Takeaway / Formula**: The ultimate result to remember for exams."""
-
-        try:
-          chat_completion = client.chat.completions.create(
-              model="openai/gpt-oss-120b",
-              messages=[
-                  {
-                      "role": "system",
-                      "content": "You are Aspirant AI, an expert tutor for STEM competitive exams.",
-                  },
-                  {"role": "user", "content": VOICE_PROMPT},
-              ],
-              max_completion_tokens=2500,
-          )
-          voice_response = clean_latex_output(
-              chat_completion.choices[0].message.content
-          )
-          st.markdown("### 🎧 Answer & Explanation")
-          st.markdown(voice_response)
-        except Exception as e:
-          st.error(f"Failed to generate explanation: {e}")
-    else:
-      st.warning("Please dictate or type your doubt first.")
+                try:
+                    chat_completion = client.chat.completions.create(
+                        model="openai/gpt-oss-120b",
+                        messages=[
+                            {
+                                "role": "system",
+                                "content": "You are Aspirant AI, an expert tutor for STEM competitive exams.",
+                            },
+                            {"role": "user", "content": SOLVER_PROMPT},
+                        ],
+                        max_completion_tokens=2500,
+                    )
+                    solution_text = clean_latex_output(
+                        chat_completion.choices[0].message.content
+                    )
+                    st.markdown("### 💡 Expert Solution & Breakdown")
+                    st.markdown(solution_text)
+                except Exception as e:
+                    st.error(f"Failed to generate solution: {e}")
+        else:
+            st.warning("Please enter or dictate a doubt first.")
 
 # ==========================================
 # SECTION 5: NCERT TEXTBOOK LIBRARY
 # ==========================================
 elif app_section == "📚 NCERT Textbook Library":
-  st.subheader("📖 Official NCERT Textbook Library")
-  st.markdown("Select your class and subject to directly access verified curriculum textbooks and PDFs.")
-  
-  col_c, col_s = st.columns(2, gap="medium")
-  with col_c:
-    selected_class = st.selectbox("Select Class", list(NCERT_FULL_DATABASE.keys()))
-  with col_s:
-    selected_subject = st.selectbox(
-        "Select Subject", list(NCERT_FULL_DATABASE[selected_class].keys())
-    )
+    st.subheader("📚 NCERT Textbook Library")
+    st.markdown("Access official Class 11 and Class 12 NCERT chapters directly for Physics, Chemistry, and Mathematics.")
 
-  st.markdown("---")
-  chapters = NCERT_FULL_DATABASE[selected_class][selected_subject]
-  st.markdown(
-      f"**Showing {len(chapters)} official chapters for {selected_class} —"
-      f" {selected_subject}**"
-  )
+    lib_class = st.selectbox("Select Class", ["Class 11", "Class 12"], key="lib_class")
+    lib_subject = st.selectbox("Select Subject", ["Physics", "Chemistry", "Mathematics"], key="lib_subject")
 
-  for ch in chapters:
-    with st.container():
-      col1, col2 = st.columns([4, 1], vertical_alignment="center")
-      with col1:
-        st.markdown(f"**{ch['name']}**")
-      with col2:
-        st.markdown(
-            f'<a href="{ch["url"]}" target="_blank" style="text-decoration: none;">'
-            '<button style="width:100%; background-color:#2563EB; color:white;'
-            " border:none; padding:8px 12px; border-radius:6px;"
-            ' font-weight:600; cursor:pointer;">Open PDF ↗</button>'
-            "</a>",
-            unsafe_allow_html=True,
-        )
+    chapters = NCERT_FULL_DATABASE[lib_class][lib_subject]
+
+    st.markdown(f"### {lib_class} — {lib_subject} Chapters")
+    for ch in chapters:
+        col_ch1, col_ch2 = st.columns([4, 1])
+        with col_ch1:
+            st.markdown(f"**{ch['name']}**")
+        with col_ch2:
+            st.markdown(f"[📥 Download PDF]({ch['url']})", unsafe_allow_html=True)
+        st.markdown("---")
