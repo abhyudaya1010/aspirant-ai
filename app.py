@@ -86,7 +86,84 @@ st.markdown("""
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         margin-bottom: 0.75rem;
     }
+
+    /* ========================================== */
+    /* FLOATING ROBOT LOGO & HOVER WIDGET STYLES  */
+    /* ========================================== */
+    @keyframes floatRobot {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-8px); }
+        100% { transform: translateY(0px); }
+    }
+
+    @keyframes pulseGlow {
+        0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+        70% { box-shadow: 0 0 0 14px rgba(37, 99, 235, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+    }
+
+    .floating-robot-container {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+    }
+
+    .robot-badge {
+        width: 64px;
+        height: 64px;
+        background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        cursor: pointer;
+        animation: floatRobot 3s ease-in-out infinite, pulseGlow 2.5s infinite;
+        box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.5);
+        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .robot-badge:hover {
+        transform: scale(1.12) rotate(6deg);
+    }
+
+    .robot-tooltip {
+        background: #0F172A;
+        color: #F8FAFC;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+        opacity: 0;
+        transform: translateY(10px);
+        transition: all 0.25s ease-in-out;
+        pointer-events: none;
+        white-space: nowrap;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .floating-robot-container:hover .robot-tooltip {
+        opacity: 1;
+        transform: translateY(0);
+    }
 </style>
+""", unsafe_allow_html=True)
+
+# Render Floating Robot Assistant Widget over the UI
+st.markdown("""
+<div class="floating-robot-container">
+    <div class="robot-tooltip">🤖 Aspirant AI Ready!</div>
+    <div class="robot-badge" title="Aspirant AI Assistant">
+        🤖
+    </div>
+</div>
 """, unsafe_allow_html=True)
 
 
@@ -444,7 +521,7 @@ NCERT_FULL_DATABASE = {
 st.markdown(
     """
     <div class="app-header">
-        <h1>🎓 Aspirant AI</h1>
+        <h1>🤖 Aspirant AI</h1>
         <p>Your intelligent Socratic study companion for Physics, Math, Chemistry, and Engineering Entrance Prep.</p>
     </div>
 """,
@@ -459,6 +536,7 @@ app_section = st.sidebar.radio(
         "🤖 AI Study & Doubt Assistant",
         "⚡ AI Formula & Revision Flashcards",
         "📝 Interactive Mock Test & Quiz Generator",
+        "🎙️ Voice-Assisted Doubt Solver",
         "📚 NCERT Textbook Library",
     ],
 )
@@ -642,7 +720,7 @@ elif app_section == "⚡ AI Formula & Revision Flashcards":
       st.warning("Please specify a chapter or topic first.")
 
 # ==========================================
-# SECTION 3: INTERACTIVE MOCK TEST & QUIZ GENERATOR (NEW FEATURE)
+# SECTION 3: INTERACTIVE MOCK TEST & QUIZ GENERATOR
 # ==========================================
 elif app_section == "📝 Interactive Mock Test & Quiz Generator":
   st.subheader("📝 Interactive Mock Test & Quiz Generator")
@@ -756,7 +834,58 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
         st.warning("Please enter your answers before submitting for evaluation.")
 
 # ==========================================
-# SECTION 4: NCERT TEXTBOOK LIBRARY
+# SECTION 4: VOICE-ASSISTED DOUBT SOLVER
+# ==========================================
+elif app_section == "🎙️ Voice-Assisted Doubt Solver":
+  st.subheader("🎙️ Voice & Dictation Doubt Solver")
+  st.markdown("Dictate your physics, chemistry, or mathematics questions directly via voice input (or type them) to receive instant, crystal-clear explanations.")
+
+  voice_doubt_input = st.text_area(
+      "Dictate or type your problem description:",
+      placeholder="e.g., What is the condition for maximum power transfer in a DC circuit, and how is it derived?",
+      help="You can use your browser/device voice-to-text keyboard dictation feature to speak your doubt directly into this box!",
+  )
+
+  col_v1, col_v2 = st.columns([1, 4], vertical_alignment="center")
+  with col_v1:
+    solve_voice_btn = st.button("Solve Doubt")
+
+  if solve_voice_btn:
+    if voice_doubt_input:
+      with st.spinner("Resolving your doubt..."):
+        VOICE_PROMPT = f"""You are Aspirant AI, an expert physics, chemistry, and mathematics tutor for engineering entrance exams.
+        A student has asked the following question via voice dictation:
+        '{voice_doubt_input}'
+        
+        Provide a structured, rigorous, yet intuitive explanation:
+        1. **Core Concept Overview**: Briefly define the main principle.
+        2. **Step-by-Step Breakdown / Derivation**: Clear mathematical or conceptual steps using LaTeX.
+        3. **Key Takeaway / Formula**: The ultimate result to remember for exams."""
+
+        try:
+          chat_completion = client.chat.completions.create(
+              model="openai/gpt-oss-120b",
+              messages=[
+                  {
+                      "role": "system",
+                      "content": "You are Aspirant AI, an expert tutor for STEM competitive exams.",
+                  },
+                  {"role": "user", "content": VOICE_PROMPT},
+              ],
+              max_completion_tokens=2500,
+          )
+          voice_response = clean_latex_output(
+              chat_completion.choices[0].message.content
+          )
+          st.markdown("### 🎧 Answer & Explanation")
+          st.markdown(voice_response)
+        except Exception as e:
+          st.error(f"Failed to generate explanation: {e}")
+    else:
+      st.warning("Please dictate or type your doubt first.")
+
+# ==========================================
+# SECTION 5: NCERT TEXTBOOK LIBRARY
 # ==========================================
 elif app_section == "📚 NCERT Textbook Library":
   st.subheader("📖 Official NCERT Textbook Library")
