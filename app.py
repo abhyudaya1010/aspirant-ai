@@ -11,7 +11,7 @@ import streamlit as st
 # ==========================================
 st.set_page_config(
     page_title="Aspirant AI — Advanced Study Companion",
-    page_icon="🎓",
+    page_icon="🤖",
     layout="wide",
 )
 
@@ -102,69 +102,40 @@ st.markdown("""
         100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
     }
 
-    .floating-robot-container {
+    .floating-robot-wrapper {
         position: fixed;
         bottom: 30px;
         right: 30px;
         z-index: 99999;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
     }
 
-    .robot-badge {
-        width: 64px;
-        height: 64px;
-        background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 32px;
-        cursor: pointer;
+    /* Styling Streamlit button inside floating wrapper to act as the robot */
+    .floating-robot-wrapper div.stButton > button {
+        width: 64px !important;
+        height: 64px !important;
+        background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%) !important;
+        border-radius: 50% !important;
+        font-size: 30px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
         animation: floatRobot 3s ease-in-out infinite, pulseGlow 2.5s infinite;
-        box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.5);
+        box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.5) !important;
+        border: 2px solid rgba(255, 255, 255, 0.2) !important;
+        padding: 0 !important;
         transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-        border: 2px solid rgba(255, 255, 255, 0.2);
     }
 
-    .robot-badge:hover {
-        transform: scale(1.12) rotate(6deg);
-    }
-
-    .robot-tooltip {
-        background: #0F172A;
-        color: #F8FAFC;
-        padding: 6px 12px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        margin-bottom: 10px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
-        opacity: 0;
-        transform: translateY(10px);
-        transition: all 0.25s ease-in-out;
-        pointer-events: none;
-        white-space: nowrap;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .floating-robot-container:hover .robot-tooltip {
-        opacity: 1;
-        transform: translateY(0);
+    .floating-robot-wrapper div.stButton > button:hover {
+        transform: scale(1.12) rotate(6deg) !important;
+        background-color: #1D4ED8 !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Render Floating Robot Assistant Widget over the UI
-st.markdown("""
-<div class="floating-robot-container">
-    <div class="robot-tooltip">🤖 Aspirant AI Ready!</div>
-    <div class="robot-badge" title="Aspirant AI Assistant">
-        🤖
-    </div>
-</div>
-""", unsafe_allow_html=True)
+# Initialize Session State for Quick Voice Mode Toggle
+if "voice_modal_active" not in st.session_state:
+  st.session_state.voice_modal_active = False
 
 
 # ==========================================
@@ -540,6 +511,74 @@ app_section = st.sidebar.radio(
         "📚 NCERT Textbook Library",
     ],
 )
+
+# ==========================================
+# FLOATING ROBOT LOGO WIDGET (CLICKABLE)
+# ==========================================
+st.markdown(
+    '<div class="floating-robot-wrapper">', unsafe_allow_html=True
+)
+if st.button("🤖", help="Click to open Voice-Assisted Doubt Solver!"):
+  st.session_state.voice_modal_active = not st.session_state.voice_modal_active
+st.markdown("</div>", unsafe_allow_html=True)
+
+# If the user clicked the robot, automatically jump to the Voice Doubt Solver or show a modal view
+if st.session_state.voice_modal_active:
+  st.markdown("""
+    <div style="background: #1E293B; color: white; padding: 1.2rem; border-radius: 10px; margin-bottom: 1.5rem; border: 2px solid #2563EB;">
+        <h3>🎙️ Aspirant AI Instant Voice & Dictation Assistant</h3>
+        <p style="color: #94A3B8; margin-bottom: 0;">You triggered the robot assistant! Dictate or type your doubt below for an instant breakdown.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+  voice_doubt_input = st.text_area(
+      "Dictate or type your problem description:",
+      placeholder="e.g., What is the condition for maximum power transfer in a DC circuit?",
+      key="floating_voice_input",
+  )
+
+  col_vm1, col_vm2 = st.columns([1, 4], vertical_alignment="center")
+  with col_vm1:
+    solve_floating_btn = st.button("Resolve Doubt", key="floating_solve_btn")
+  with col_vm2:
+    if st.button("Close Assistant", key="close_modal_btn"):
+      st.session_state.voice_modal_active = False
+      st.rerun()
+
+  if solve_floating_btn:
+    if voice_doubt_input:
+      with st.spinner("Resolving your doubt..."):
+        VOICE_PROMPT = f"""You are Aspirant AI, an expert physics, chemistry, and mathematics tutor for engineering entrance exams.
+        A student has asked the following question via voice dictation:
+        '{voice_doubt_input}'
+        
+        Provide a structured, rigorous, yet intuitive explanation:
+        1. **Core Concept Overview**: Briefly define the main principle.
+        2. **Step-by-Step Breakdown / Derivation**: Clear mathematical or conceptual steps using LaTeX.
+        3. **Key Takeaway / Formula**: The ultimate result to remember for exams."""
+
+        try:
+          chat_completion = client.chat.completions.create(
+              model="openai/gpt-oss-120b",
+              messages=[
+                  {
+                      "role": "system",
+                      "content": "You are Aspirant AI, an expert tutor for STEM competitive exams.",
+                  },
+                  {"role": "user", "content": VOICE_PROMPT},
+              ],
+              max_completion_tokens=2500,
+          )
+          voice_response = clean_latex_output(
+              chat_completion.choices[0].message.content
+          )
+          st.markdown("### 🎧 Answer & Explanation")
+          st.markdown(voice_response)
+        except Exception as e:
+          st.error(f"Failed to generate explanation: {e}")
+    else:
+      st.warning("Please dictate or type your doubt first.")
+  st.markdown("---")
 
 # ==========================================
 # SECTION 1: AI STUDY & DOUBT ASSISTANT
