@@ -88,7 +88,7 @@ st.markdown("""
     }
 
     /* ========================================== */
-    /* FLOATING ROBOT LOGO & HOVER WIDGET STYLES  */
+    /* FLOATING ROBOT & POPUP CARD STYLES         */
     /* ========================================== */
     @keyframes floatRobot {
         0% { transform: translateY(0px); }
@@ -104,18 +104,17 @@ st.markdown("""
 
     .floating-robot-wrapper {
         position: fixed;
-        bottom: 30px;
-        right: 30px;
+        bottom: 25px;
+        right: 25px;
         z-index: 99999;
     }
 
-    /* Styling Streamlit button inside floating wrapper to act as the robot */
     .floating-robot-wrapper div.stButton > button {
         width: 64px !important;
         height: 64px !important;
         background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%) !important;
         border-radius: 50% !important;
-        font-size: 30px !important;
+        font-size: 28px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
@@ -129,6 +128,34 @@ st.markdown("""
     .floating-robot-wrapper div.stButton > button:hover {
         transform: scale(1.12) rotate(6deg) !important;
         background-color: #1D4ED8 !important;
+    }
+
+    /* Floating Popup Modal Window (Pinned above robot) */
+    .floating-modal-backdrop {
+        position: fixed;
+        bottom: 105px;
+        right: 25px;
+        width: 380px;
+        max-height: 82vh;
+        overflow-y: auto;
+        background: #0F172A;
+        border: 2px solid #2563EB;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        z-index: 99998;
+    }
+
+    .floating-answer-box {
+        background: #1E293B;
+        padding: 12px;
+        border-radius: 8px;
+        margin-top: 12px;
+        color: #F8FAFC;
+        font-size: 0.95rem;
+        max-height: 250px;
+        overflow-y: auto;
+        border: 1px solid #334155;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -513,7 +540,7 @@ app_section = st.sidebar.radio(
 )
 
 # ==========================================
-# FLOATING ROBOT LOGO WIDGET (CLICKABLE)
+# FLOATING ROBOT LOGO & POPUP WIDGET
 # ==========================================
 st.markdown(
     '<div class="floating-robot-wrapper">', unsafe_allow_html=True
@@ -522,63 +549,79 @@ if st.button("🤖", help="Click to open Voice-Assisted Doubt Solver!"):
   st.session_state.voice_modal_active = not st.session_state.voice_modal_active
 st.markdown("</div>", unsafe_allow_html=True)
 
-# If the user clicked the robot, automatically jump to the Voice Doubt Solver or show a modal view
+# Floating Voice Modal Card Popup
 if st.session_state.voice_modal_active:
-  st.markdown("""
-    <div style="background: #1E293B; color: white; padding: 1.2rem; border-radius: 10px; margin-bottom: 1.5rem; border: 2px solid #2563EB;">
-        <h3>🎙️ Aspirant AI Instant Voice & Dictation Assistant</h3>
-        <p style="color: #94A3B8; margin-bottom: 0;">You triggered the robot assistant! Dictate or type your doubt below for an instant breakdown.</p>
-    </div>
-    """, unsafe_allow_html=True)
+  st.markdown('<div class="floating-modal-backdrop">', unsafe_allow_html=True)
+  with st.container():
+    st.markdown("""
+        <div>
+            <h3 style="color: white; margin-top: 0; margin-bottom: 4px; font-size: 1.15rem;">🎙️ AI Voice & Dictation Assistant</h3>
+            <p style="color: #94A3B8; font-size: 0.85rem; margin-bottom: 12px;">Dictate or type your doubt for an instant breakdown.</p>
+        </div>
+        """, unsafe_allow_html=True)
 
-  voice_doubt_input = st.text_area(
-      "Dictate or type your problem description:",
-      placeholder="e.g., What is the condition for maximum power transfer in a DC circuit?",
-      key="floating_voice_input",
-  )
+    voice_doubt_input = st.text_area(
+        "Dictate or type your problem description:",
+        placeholder=(
+            "e.g., What is the condition for maximum power transfer?"
+        ),
+        key="floating_voice_input",
+        label_visibility="collapsed",
+    )
 
-  col_vm1, col_vm2 = st.columns([1, 4], vertical_alignment="center")
-  with col_vm1:
-    solve_floating_btn = st.button("Resolve Doubt", key="floating_solve_btn")
-  with col_vm2:
-    if st.button("Close Assistant", key="close_modal_btn"):
+    col_vm1, col_vm2 = st.columns(2)
+    with col_vm1:
+      solve_floating_btn = st.button(
+          "🚀 Solve Doubt", key="floating_solve_btn", use_container_width=True
+      )
+    with col_vm2:
+      close_floating_btn = st.button(
+          "❌ Close", key="close_modal_btn", use_container_width=True
+      )
+
+    if close_floating_btn:
       st.session_state.voice_modal_active = False
       st.rerun()
 
-  if solve_floating_btn:
-    if voice_doubt_input:
-      with st.spinner("Resolving your doubt..."):
-        VOICE_PROMPT = f"""You are Aspirant AI, an expert physics, chemistry, and mathematics tutor for engineering entrance exams.
-        A student has asked the following question via voice dictation:
-        '{voice_doubt_input}'
-        
-        Provide a structured, rigorous, yet intuitive explanation:
-        1. **Core Concept Overview**: Briefly define the main principle.
-        2. **Step-by-Step Breakdown / Derivation**: Clear mathematical or conceptual steps using LaTeX.
-        3. **Key Takeaway / Formula**: The ultimate result to remember for exams."""
+    if solve_floating_btn:
+      if voice_doubt_input:
+        with st.spinner("Resolving..."):
+          VOICE_PROMPT = f"""You are Aspirant AI, an expert physics, chemistry, and mathematics tutor for engineering entrance exams.
+            A student has asked the following question via voice dictation:
+            '{voice_doubt_input}'
+            
+            Provide a structured, rigorous, yet intuitive explanation:
+            1. **Core Concept Overview**: Briefly define the main principle.
+            2. **Step-by-Step Breakdown**: Clear mathematical or conceptual steps using LaTeX.
+            3. **Key Takeaway / Formula**: The ultimate result to remember for exams."""
 
-        try:
-          chat_completion = client.chat.completions.create(
-              model="openai/gpt-oss-120b",
-              messages=[
-                  {
-                      "role": "system",
-                      "content": "You are Aspirant AI, an expert tutor for STEM competitive exams.",
-                  },
-                  {"role": "user", "content": VOICE_PROMPT},
-              ],
-              max_completion_tokens=2500,
-          )
-          voice_response = clean_latex_output(
-              chat_completion.choices[0].message.content
-          )
-          st.markdown("### 🎧 Answer & Explanation")
-          st.markdown(voice_response)
-        except Exception as e:
-          st.error(f"Failed to generate explanation: {e}")
-    else:
-      st.warning("Please dictate or type your doubt first.")
-  st.markdown("---")
+          try:
+            chat_completion = client.chat.completions.create(
+                model="openai/gpt-oss-120b",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are Aspirant AI, an expert tutor for STEM"
+                            " competitive exams."
+                        ),
+                    },
+                    {"role": "user", "content": VOICE_PROMPT},
+                ],
+                max_completion_tokens=2000,
+            )
+            voice_response = clean_latex_output(
+                chat_completion.choices[0].message.content
+            )
+            st.markdown('<div class="floating-answer-box">', unsafe_allow_html=True)
+            st.markdown("**Answer & Explanation:**")
+            st.markdown(voice_response)
+            st.markdown("</div>", unsafe_allow_html=True)
+          except Exception as e:
+            st.error(f"Failed to generate explanation: {e}")
+      else:
+        st.warning("Please dictate or type your doubt first.")
+  st.markdown("</div>", unsafe_allow_html=True)
 
 # ==========================================
 # SECTION 1: AI STUDY & DOUBT ASSISTANT
