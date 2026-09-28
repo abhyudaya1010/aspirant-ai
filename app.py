@@ -112,9 +112,13 @@ st.markdown("""
     .floating-robot-wrapper div.stButton > button {
         width: 64px !important;
         height: 64px !important;
-        background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%) !important;
+        background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M12,2A2,2 0 0,1 14,4C14,4.74 13.6,5.39 13,5.73V7H15A2,2 0 0,1 17,9V18A2,2 0 0,1 15,20H9A2,2 0 0,1 7,18V9A2,2 0 0,1 9,7H11V5.73C10.4,5.39 10,4.74 10,4A2,2 0 0,1 12,2M12,4A1,1 0 0,0 11,5A1,1 0 0,0 12,6A1,1 0 0,0 13,5A1,1 0 0,0 12,4M9,9V13H15V9H9M10,15A1,1 0 0,0 9,16A1,1 0 0,0 10,17A1,1 0 0,0 11,16A1,1 0 0,0 10,15M14,15A1,1 0 0,0 13,16A1,1 0 0,0 14,17A1,1 0 0,0 15,16A1,1 0 0,0 14,15Z'/%3E%3C/svg%3E") !important;
+        background-repeat: no-repeat !important;
+        background-position: center !important;
+        background-size: 32px 32px !important;
         border-radius: 50% !important;
-        font-size: 28px !important;
+        color: transparent !important;
+        font-size: 0px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
@@ -122,6 +126,7 @@ st.markdown("""
         box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.5) !important;
         border: 2px solid rgba(255, 255, 255, 0.2) !important;
         padding: 0 !important;
+        cursor: pointer !important;
         transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
@@ -130,7 +135,7 @@ st.markdown("""
         background-color: #1D4ED8 !important;
     }
 
-    /* Floating Popup Modal Window (Pinned above robot) */
+    /* Floating Popup Modal Window (Pinned directly above robot) */
     .floating-modal-backdrop {
         position: fixed;
         bottom: 105px;
@@ -542,10 +547,8 @@ app_section = st.sidebar.radio(
 # ==========================================
 # FLOATING ROBOT LOGO & POPUP WIDGET
 # ==========================================
-st.markdown(
-    '<div class="floating-robot-wrapper">', unsafe_allow_html=True
-)
-if st.button("🤖", help="Click to open Voice-Assisted Doubt Solver!"):
+st.markdown('<div class="floating-robot-wrapper">', unsafe_allow_html=True)
+if st.button("", help="Click to open AI Voice Doubt Solver!"):
   st.session_state.voice_modal_active = not st.session_state.voice_modal_active
 st.markdown("</div>", unsafe_allow_html=True)
 
