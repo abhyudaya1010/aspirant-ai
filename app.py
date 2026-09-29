@@ -651,23 +651,43 @@ elif app_section == "⚡ AI Formula Flashcards (SM-2 Spaced Repetition)":
                 )
             st.markdown("---")
         st.success("Your review ratings have been recorded for optimal interval scheduling! 🧠")
-
 # ==========================================
 # SECTION 3: FEYNMAN TEACH-BACK SIMULATOR
 # ==========================================
 elif app_section == "🎓 Feynman Teach-Back Simulator":
     st.subheader("🎓 Feynman Technique Teach-Back Simulator")
-    st.markdown("True mastery is being able to explain complex physics or math simply. Explain a concept in your own words, and our Harvard-style AI professor will evaluate your clarity.")
+    st.markdown("True mastery is being able to explain complex physics or math simply. Record your voice or type your explanation, and our Harvard-style AI professor will evaluate your clarity.")
 
     feynman_concept = st.text_input(
         "What concept are you teaching today?",
-        placeholder="e.g., Electromagnetic Induction, Gauss's Law, or Chain Rule in Calculus"
+        placeholder="e.g., Electromagnetic Induction, Gauss's Law, or Chain Rule in Calculus",
+        key="feynman_concept_input"
     )
 
+    # Microphone Audio Input for Teach-Back
+    feynman_audio = st.audio_input("🎙️ Click the microphone to explain the concept out loud:")
+
+    transcribed_explanation = ""
+    if feynman_audio is not None:
+        with st.spinner("Transcribing your audio using Whisper..."):
+            try:
+                audio_bytes = feynman_audio.read()
+                transcription = client.audio.transcriptions.create(
+                    file=("feynman_audio.wav", audio_bytes),
+                    model="whisper-large-v3",
+                    response_format="text"
+                )
+                transcribed_explanation = transcription
+                st.success(f"Successfully transcribed: \"{transcribed_explanation}\"")
+            except Exception as e:
+                st.error(f"Audio transcription failed: {e}")
+
     feynman_explanation = st.text_area(
-        "Explain it in your own words (as if teaching a beginner):",
+        "Or type/edit your explanation here:",
+        value=transcribed_explanation,
         placeholder="Type your explanation here without overly relying on jargon...",
-        height=150
+        height=150,
+        key="feynman_text_input"
     )
 
     if st.button("Evaluate My Teach-Back"):
@@ -697,7 +717,7 @@ elif app_section == "🎓 Feynman Teach-Back Simulator":
                 except Exception as e:
                     st.error(f"Evaluation failed: {e}")
         else:
-            st.warning("Please provide both a concept and your explanation.")
+            st.warning("Please provide both a concept and your verbal or written explanation.")
 
 # ==========================================
 # SECTION 4: INTERACTIVE MOCK TEST & QUIZ GENERATOR
