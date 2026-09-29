@@ -466,21 +466,65 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Sidebar configuration - Navigation
-st.sidebar.markdown("### Navigation Hub")
-app_section = st.sidebar.radio(
-    "Select Feature Hub",
+# ==========================================
+# SIDEBAR NAVIGATION & CATEGORIES
+# ==========================================
+st.sidebar.markdown(
+    """
+    <div style='text-align: center; padding: 10px 0 20px 0;'>
+        <h2 style='color: #818CF8; font-size: 1.4rem; font-weight: 800; margin-bottom: 0;'>Aspirant AI</h2>
+        <p style='color: #64748B; font-size: 0.8rem;'>Harvard-Tier Edition</p>
+    </div>
+""",
+    unsafe_allow_html=True,
+)
+
+st.sidebar.markdown("### 🧭 Navigation Hub")
+
+# Grouped navigation options for better UX
+nav_category = st.sidebar.selectbox(
+    "Hub Category",
     [
-        "🤖 AI Study & Doubt Assistant",
-        "⚡ AI Formula Flashcards (SM-2 Spaced Repetition)",
-        "🎓 Feynman Teach-Back Simulator",
-        "📝 Interactive Mock Test & Quiz Generator",
-        "🎙️ Voice-Assisted Doubt Solver",
-        "🎯 JEE/Board Study Planner & Tracker",
-        "📚 NCERT Textbook Library",
+        "🧠 Core AI Tutoring",
+        "⚡ Mastery & Retention",
+        "📈 Planning & Resources",
     ],
 )
 
+if nav_category == "🧠 Core AI Tutoring":
+    app_section = st.sidebar.radio(
+        "Select Tool",
+        [
+            "🤖 AI Study & Doubt Assistant",
+            "🎙️ Voice-Assisted Doubt Solver",
+        ],
+        label_visibility="collapsed",
+    )
+elif nav_category == "⚡ Mastery & Retention":
+    app_section = st.sidebar.radio(
+        "Select Tool",
+        [
+            "🎓 Feynman Teach-Back Simulator",
+            "⚡ AI Formula Flashcards (SM-2 Spaced Repetition)",
+            "📝 Interactive Mock Test & Quiz Generator",
+        ],
+        label_visibility="collapsed",
+    )
+else:
+    app_section = st.sidebar.radio(
+        "Select Tool",
+        [
+            "🎯 JEE/Board Study Planner & Tracker",
+            "📚 NCERT Textbook Library",
+        ],
+        label_visibility="collapsed",
+    )
+
+st.sidebar.markdown("---")
+st.sidebar.markdown(
+    "<div style='color: #64748B; font-size: 0.75rem; text-align: center;'>Powered by Groq & Llama 3</div>",
+    unsafe_allow_html=True,
+)
 # ==========================================
 # SECTION 1: AI STUDY & DOUBT ASSISTANT
 # ==========================================
