@@ -9,84 +9,103 @@ from PIL import Image
 import streamlit as st
 
 # ==========================================
-# PAGE CONFIGURATION & CUSTOM CSS
+# PAGE CONFIGURATION & CUSTOM DESIGN SYSTEM
 # ==========================================
 st.set_page_config(
-    page_title="Aspirant AI — Harvard-Level Study Companion",
-    page_icon="🤖",
+    page_title="Aspirant AI — Harvard-Tier Study Companion",
+    page_icon="🎓",
     layout="wide",
 )
 
 st.markdown("""
 <style>
-    /* Global Theme Styling */
+    /* Global Theme & Background */
     .main {
-        background-color: #F8FAFC;
+        background: #090D16;
+        color: #F1F5F9;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
     
-    /* App Header Styling */
+    /* App Header Banner */
     .app-header {
-        background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
-        padding: 2rem 2.5rem;
-        border-radius: 12px;
+        background: linear-gradient(135deg, #1E1B4B 0%, #0F172A 50%, #020617 100%);
+        padding: 2.5rem 3rem;
+        border-radius: 16px;
         color: white;
         margin-bottom: 2rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        border: 1px solid #312E81;
+        box-shadow: 0 10px 25px -5px rgba(30, 27, 75, 0.4);
     }
     .app-header h1 {
-        font-size: 2.25rem;
+        font-size: 2.5rem;
         font-weight: 800;
         margin-bottom: 0.5rem;
-        letter-spacing: -0.025em;
+        background: linear-gradient(90deg, #818CF8 0%, #C084FC 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: -0.03em;
     }
     .app-header p {
         color: #94A3B8;
-        font-size: 1.1rem;
+        font-size: 1.15rem;
         margin-bottom: 0;
+        font-weight: 400;
     }
 
     /* Section Headers */
     h2, h3 {
-        color: #1E293B;
+        color: #F8FAFC !important;
         font-weight: 700;
+        letter-spacing: -0.02em;
     }
 
     /* Custom Buttons */
     .stButton > button {
-        background-color: #2563EB;
+        background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
         color: white;
-        border-radius: 8px;
+        border-radius: 10px;
         font-weight: 600;
-        padding: 0.6rem 1.2rem;
+        padding: 0.65rem 1.4rem;
         border: none;
-        transition: all 0.2s ease-in-out;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        transition: all 0.25s ease-in-out;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
     }
     .stButton > button:hover {
-        background-color: #1D4ED8;
-        box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+        background: linear-gradient(135deg, #4338CA 0%, #4F46E5 100%);
+        box-shadow: 0 6px 16px rgba(79, 70, 229, 0.5);
+        transform: translateY(-1px);
     }
 
     /* Sidebar Customization */
     section[data-testid="stSidebar"] {
-        background-color: #0F172A;
-        color: #F8FAFC;
+        background-color: #030712;
+        border-right: 1px solid #1E293B;
     }
-    section[data-testid="stSidebar"] .stSelectbox label, 
-    section[data-testid="stSidebar"] h2, 
-    section[data-testid="stSidebar"] p, 
-    section[data-testid="stSidebar"] span {
-        color: #F8FAFC !important;
+    section[data-testid="stSidebar"] .stRadio label {
+        color: #CBD5E1 !important;
+        font-weight: 500;
+    }
+    section[data-testid="stSidebar"] h3 {
+        color: #818CF8 !important;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
     }
 
     /* Cards / Containers */
-    div.stContainer {
-        background: white;
-        padding: 1.2rem;
-        border-radius: 10px;
-        border: 1px solid #E2E8F0;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        margin-bottom: 0.75rem;
+    div.stContainer, .streamlit-expanderHeader {
+        background: #0F172A;
+        padding: 1.25rem;
+        border-radius: 12px;
+        border: 1px solid #1E293B;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+        margin-bottom: 1rem;
+    }
+    
+    /* Metrics & Badges */
+    [data-testid="stMetricValue"] {
+        color: #818CF8 !important;
+        font-weight: 700;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -440,7 +459,7 @@ NCERT_FULL_DATABASE = {
 st.markdown(
     """
     <div class="app-header">
-        <h1>🤖 Aspirant AI</h1>
+        <h1>🎓 Aspirant AI</h1>
         <p>Harvard-Tier Socratic Study Companion for Physics, Math, Chemistry, and Engineering Entrance Prep.</p>
     </div>
 """,
@@ -448,7 +467,7 @@ st.markdown(
 )
 
 # Sidebar configuration - Navigation
-st.sidebar.markdown("### ⚙️ Navigation Hub")
+st.sidebar.markdown("### Navigation Hub")
 app_section = st.sidebar.radio(
     "Select Feature Hub",
     [
@@ -651,6 +670,7 @@ elif app_section == "⚡ AI Formula Flashcards (SM-2 Spaced Repetition)":
                 )
             st.markdown("---")
         st.success("Your review ratings have been recorded for optimal interval scheduling! 🧠")
+
 # ==========================================
 # SECTION 3: FEYNMAN TEACH-BACK SIMULATOR
 # ==========================================
@@ -664,7 +684,6 @@ elif app_section == "🎓 Feynman Teach-Back Simulator":
         key="feynman_concept_input"
     )
 
-    # Microphone Audio Input for Teach-Back
     feynman_audio = st.audio_input("🎙️ Click the microphone to explain the concept out loud:")
 
     transcribed_explanation = ""
