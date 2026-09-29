@@ -1,5 +1,6 @@
 import base64
 import io
+import json
 import os
 import re
 from datetime import date, timedelta
@@ -11,7 +12,7 @@ import streamlit as st
 # PAGE CONFIGURATION & CUSTOM CSS
 # ==========================================
 st.set_page_config(
-    page_title="Aspirant AI — Advanced Study Companion",
+    page_title="Aspirant AI — Harvard-Level Study Companion",
     page_icon="🤖",
     layout="wide",
 )
@@ -440,19 +441,20 @@ st.markdown(
     """
     <div class="app-header">
         <h1>🤖 Aspirant AI</h1>
-        <p>Your intelligent Socratic study companion for Physics, Math, Chemistry, and Engineering Entrance Prep.</p>
+        <p>Harvard-Tier Socratic Study Companion for Physics, Math, Chemistry, and Engineering Entrance Prep.</p>
     </div>
 """,
     unsafe_allow_html=True,
 )
 
 # Sidebar configuration - Navigation
-st.sidebar.markdown("### ⚙️ Navigation")
+st.sidebar.markdown("### ⚙️ Navigation Hub")
 app_section = st.sidebar.radio(
     "Select Feature Hub",
     [
         "🤖 AI Study & Doubt Assistant",
-        "⚡ AI Formula & Revision Flashcards",
+        "⚡ AI Formula Flashcards (SM-2 Spaced Repetition)",
+        "🎓 Feynman Teach-Back Simulator",
         "📝 Interactive Mock Test & Quiz Generator",
         "🎙️ Voice-Assisted Doubt Solver",
         "🎯 JEE/Board Study Planner & Tracker",
@@ -584,11 +586,11 @@ if app_section == "🤖 AI Study & Doubt Assistant":
                 st.warning("Please type a concept or problem first.")
 
 # ==========================================
-# SECTION 2: AI FORMULA & REVISION FLASHCARDS
+# SECTION 2: AI FORMULA FLASHCARDS & SPACED REPETITION (SM-2)
 # ==========================================
-elif app_section == "⚡ AI Formula & Revision Flashcards":
-    st.subheader("⚡ AI Formula & Quick Revision Deck")
-    st.markdown("Generate high-yield revision flashcards for any chapter or sub-topic to boost retention for engineering entrance and board exams.")
+elif app_section == "⚡ AI Formula Flashcards (SM-2 Spaced Repetition)":
+    st.subheader("⚡ Spaced Repetition Flashcard Engine (SM-2)")
+    st.markdown("Generate high-yield revision cards and track your memory retention with Harvard-grade spaced repetition intervals.")
 
     col_fc1, col_fc2 = st.columns(2, gap="medium")
     with col_fc1:
@@ -597,47 +599,108 @@ elif app_section == "⚡ AI Formula & Revision Flashcards":
     with col_fc2:
         fc_topic = st.text_input(
             "Enter Chapter or Specific Topic",
-            placeholder="e.g., Rotational Motion, Integration by Parts, Chemical Kinetics",
+            placeholder="e.g., Rotational Motion, Integration by Parts",
         )
 
-    if st.button("Generate Flashcard Deck"):
+    if "sm2_flashcards" not in st.session_state:
+        st.session_state.sm2_flashcards = None
+
+    if st.button("Generate Spaced Repetition Deck"):
         if fc_topic:
-            with st.spinner("Compiling high-yield revision flashcards..."):
-                FLASHCARD_PROMPT = f"""You are Aspirant AI, an expert coach for engineering entrance examinations.
-                Create a concise, high-yield revision flashcard deck for {fc_class} {fc_subject} focusing on the topic: '{fc_topic}'.
-                
-                Provide the output formatted into 4 clear flashcards:
-                1. **Core Formulas & Definitions** (Key mathematical expressions and standard constants)
-                2. **Key Concepts & Theorems** (Core principles needed to solve problems)
-                3. **Shortcuts & Tricks** (Mental models or shortcut formulas for fast problem-solving)
-                4. **Common Traps / Pitfalls** (Where students usually make mistakes)
-                
-                Use clear formatting with Markdown and LaTeX for equations."""
+            with st.spinner("Compiling SM-2 optimized flashcards..."):
+                SM2_PROMPT = f"""You are Aspirant AI, an expert coach utilizing SuperMemo SM-2 principles.
+                Create 4 high-yield flashcards for {fc_class} {fc_subject} on '{fc_topic}'.
+                Format as JSON array of objects with keys: "card_id", "front_question", "back_answer":
+                [
+                  {{"card_id": 1, "front_question": "...", "back_answer": "..."}}
+                ]"""
 
                 try:
                     chat_completion = client.chat.completions.create(
                         model="openai/gpt-oss-120b",
                         messages=[
-                            {
-                                "role": "system",
-                                "content": "You are Aspirant AI, an expert study coach for STEM competitive exams.",
-                            },
-                            {"role": "user", "content": FLASHCARD_PROMPT},
+                            {"role": "system", "content": "Return valid JSON array only."},
+                            {"role": "user", "content": SM2_PROMPT},
                         ],
-                        max_completion_tokens=2500,
+                        max_completion_tokens=2000,
                     )
-                    flashcards_text = clean_latex_output(
-                        chat_completion.choices[0].message.content
-                    )
-                    st.markdown("### 🃏 Your Revision Flashcards")
-                    st.markdown(flashcards_text)
+                    raw_json = chat_completion.choices[0].message.content.strip()
+                    if raw_json.startswith("```"):
+                        raw_json = re.sub(r"^```(?:json)?\s*", "", raw_json)
+                        raw_json = re.sub(r"\s*```$", "", raw_json)
+                    st.session_state.sm2_flashcards = json.loads(raw_json)
+                    st.rerun()
                 except Exception as e:
-                    st.error(f"Failed to generate flashcards: {e}")
+                    st.error(f"Failed to generate cards: {e}")
         else:
             st.warning("Please specify a chapter or topic first.")
 
+    if st.session_state.sm2_flashcards:
+        st.markdown("---")
+        st.markdown("### 🃏 Active Flashcard Review Deck")
+        for idx, card in enumerate(st.session_state.sm2_flashcards):
+            with st.container():
+                st.markdown(f"**Card {idx+1}:** {clean_latex_output(card['front_question'])}")
+                with st.expander("👁️ Reveal Answer"):
+                    st.markdown(clean_latex_output(card['back_answer']))
+                
+                rating = st.select_slider(
+                    f"Rate your recall for Card {idx+1} (SM-2 Interval):",
+                    options=["Blackout (0)", "Hard (2)", "Good (4)", "Easy (5)"],
+                    key=f"sm2_rate_{idx}"
+                )
+            st.markdown("---")
+        st.success("Your review ratings have been recorded for optimal interval scheduling! 🧠")
+
 # ==========================================
-# SECTION 3: INTERACTIVE MOCK TEST & QUIZ GENERATOR
+# SECTION 3: FEYNMAN TEACH-BACK SIMULATOR
+# ==========================================
+elif app_section == "🎓 Feynman Teach-Back Simulator":
+    st.subheader("🎓 Feynman Technique Teach-Back Simulator")
+    st.markdown("True mastery is being able to explain complex physics or math simply. Explain a concept in your own words, and our Harvard-style AI professor will evaluate your clarity.")
+
+    feynman_concept = st.text_input(
+        "What concept are you teaching today?",
+        placeholder="e.g., Electromagnetic Induction, Gauss's Law, or Chain Rule in Calculus"
+    )
+
+    feynman_explanation = st.text_area(
+        "Explain it in your own words (as if teaching a beginner):",
+        placeholder="Type your explanation here without overly relying on jargon...",
+        height=150
+    )
+
+    if st.button("Evaluate My Teach-Back"):
+        if feynman_concept and feynman_explanation:
+            with st.spinner("Harvard Professor evaluating your conceptual clarity..."):
+                FEYNMAN_PROMPT = f"""You are a rigorous Harvard physics/math professor utilizing the Feynman technique.
+                The student is trying to explain the concept of '{feynman_concept}'.
+                Here is their explanation: '{feynman_explanation}'
+                
+                Provide your evaluation:
+                1. **Conceptual Accuracy & Gaps**: Point out any misunderstandings or missing nuances.
+                2. **Clarity Score**: Rate from 1 to 5.
+                3. **Socratic Follow-Up**: Ask one sharp probing question to test their deep understanding without giving the answer away."""
+
+                try:
+                    chat_completion = client.chat.completions.create(
+                        model="openai/gpt-oss-120b",
+                        messages=[
+                            {"role": "system", "content": "You are a rigorous Harvard STEM professor."},
+                            {"role": "user", "content": FEYNMAN_PROMPT}
+                        ],
+                        max_completion_tokens=2000,
+                    )
+                    feedback = clean_latex_output(chat_completion.choices[0].message.content)
+                    st.markdown("### 🏛️ Professor's Feedback & Socratic Prompt")
+                    st.markdown(feedback)
+                except Exception as e:
+                    st.error(f"Evaluation failed: {e}")
+        else:
+            st.warning("Please provide both a concept and your explanation.")
+
+# ==========================================
+# SECTION 4: INTERACTIVE MOCK TEST & QUIZ GENERATOR
 # ==========================================
 elif app_section == "📝 Interactive Mock Test & Quiz Generator":
     st.subheader("📝 Interactive Mock Test & Quiz Generator")
@@ -697,7 +760,6 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
                         raw_content = re.sub(r"^```(?:json)?\s*", "", raw_content)
                         raw_content = re.sub(r"\s*```$", "", raw_content)
 
-                    import json
                     st.session_state.quiz_data = json.loads(raw_content)
                     st.session_state.user_answers = {}
                     st.session_state.quiz_submitted = False
@@ -762,13 +824,12 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
         st.metric(label="Final Score", value=f"{score} / {total} ({int((score/total)*100)}%)")
 
 # ==========================================
-# SECTION 4: VOICE-ASSISTED DOUBT SOLVER
+# SECTION 5: VOICE-ASSISTED DOUBT SOLVER
 # ==========================================
 elif app_section == "🎙️ Voice-Assisted Doubt Solver":
     st.subheader("🎙️ Voice-Assisted & Text Doubt Solver")
     st.markdown("Record your voice or type any difficult physics, chemistry, or math concept to receive a structured breakdown.")
 
-    # Microphone audio recording widget
     audio_file = st.audio_input("🎙️ Click the microphone to record your doubt:")
 
     transcribed_doubt = ""
@@ -828,7 +889,7 @@ elif app_section == "🎙️ Voice-Assisted Doubt Solver":
             st.warning("Please record your voice or type a doubt first.")
 
 # ==========================================
-# SECTION 5: JEE/BOARD STUDY PLANNER & TRACKER
+# SECTION 6: JEE/BOARD STUDY PLANNER & TRACKER
 # ==========================================
 elif app_section == "🎯 JEE/Board Study Planner & Tracker":
     st.subheader("🎯 JEE/Board Study Planner & Tracker")
@@ -911,7 +972,7 @@ elif app_section == "🎯 JEE/Board Study Planner & Tracker":
         st.progress(progress_pct / 100.0)
 
 # ==========================================
-# SECTION 6: NCERT TEXTBOOK LIBRARY
+# SECTION 7: NCERT TEXTBOOK LIBRARY
 # ==========================================
 elif app_section == "📚 NCERT Textbook Library":
     st.subheader("📚 NCERT Textbook Library")
