@@ -2,6 +2,7 @@ import base64
 import io
 import os
 import re
+from datetime import date, timedelta
 from groq import Groq
 from PIL import Image
 import streamlit as st
@@ -454,6 +455,7 @@ app_section = st.sidebar.radio(
         "⚡ AI Formula & Revision Flashcards",
         "📝 Interactive Mock Test & Quiz Generator",
         "🎙️ Voice-Assisted Doubt Solver",
+        "🎯 JEE/Board Study Planner & Tracker",
         "📚 NCERT Textbook Library",
     ],
 )
@@ -826,7 +828,90 @@ elif app_section == "🎙️ Voice-Assisted Doubt Solver":
             st.warning("Please record your voice or type a doubt first.")
 
 # ==========================================
-# SECTION 5: NCERT TEXTBOOK LIBRARY
+# SECTION 5: JEE/BOARD STUDY PLANNER & TRACKER
+# ==========================================
+elif app_section == "🎯 JEE/Board Study Planner & Tracker":
+    st.subheader("🎯 JEE/Board Study Planner & Tracker")
+    st.markdown("Generate a custom study schedule tailored to your target exam date, and track your daily preparation progress.")
+
+    col_p1, col_p2 = st.columns(2, gap="medium")
+    with col_p1:
+        planner_class = st.selectbox("Target Class/Level", ["Class 11", "Class 12", "JEE Main Targeter"], key="planner_class")
+        target_exam_date = st.date_input("Target Exam Date", value=date.today() + timedelta(days=90))
+    with col_p2:
+        focus_subjects = st.multiselect(
+            "Focus Subjects", 
+            ["Physics", "Chemistry", "Mathematics"], 
+            default=["Physics", "Chemistry", "Mathematics"]
+        )
+        study_hours = st.slider("Daily Study Hours Available", 2, 12, 6)
+
+    if "study_plan_data" not in st.session_state:
+        st.session_state.study_plan_data = None
+    if "checked_topics" not in st.session_state:
+        st.session_state.checked_topics = {}
+
+    if st.button("Generate Custom Study Plan"):
+        if focus_subjects:
+            with st.spinner("Generating personalized study roadmap..."):
+                PLANNER_PROMPT = f"""You are Aspirant AI, an expert exam strategist and study planner.
+                Create a high-efficiency study plan for a student in {planner_class} studying {', '.join(focus_subjects)}.
+                Target Exam Date: {target_exam_date}
+                Daily study hours: {study_hours} hours.
+                
+                Provide a structured weekly or milestone-based study plan broken down into actionable phases, key chapters to cover, and weekly goals."""
+
+                try:
+                    chat_completion = client.chat.completions.create(
+                        model="openai/gpt-oss-120b",
+                        messages=[
+                            {
+                                "role": "system",
+                                "content": "You are Aspirant AI, an expert study coach.",
+                            },
+                            {"role": "user", "content": PLANNER_PROMPT},
+                        ],
+                        max_completion_tokens=2500,
+                    )
+                    st.session_state.study_plan_data = clean_latex_output(
+                        chat_completion.choices[0].message.content
+                    )
+                    st.session_state.checked_topics = {}
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Failed to generate study plan: {e}")
+        else:
+            st.warning("Please select at least one focus subject.")
+
+    if st.session_state.study_plan_data:
+        st.markdown("---")
+        st.markdown("### 🗓️ Your Personalized Study Roadmap")
+        st.markdown(st.session_state.study_plan_data)
+        
+        st.markdown("---")
+        st.markdown("### ✅ Quick Topic Completion Checklist")
+        st.markdown("Check off major milestones as you complete them:")
+        
+        sample_milestones = [
+            "Complete NCERT reading & solved examples",
+            "Solve previous years' questions (PYQs) for the chapter",
+            "Take timed chapter mock test",
+            "Review formula revision flashcards"
+        ]
+        
+        for idx, milestone in enumerate(sample_milestones):
+            checked = st.checkbox(milestone, key=f"milestone_{idx}")
+            st.session_state.checked_topics[milestone] = checked
+
+        completed_count = sum(1 for v in st.session_state.checked_topics.values() if v)
+        total_milestones = len(sample_milestones)
+        progress_pct = int((completed_count / total_milestones) * 100)
+        
+        st.markdown(f"**Overall Milestone Progress: {progress_pct}%**")
+        st.progress(progress_pct / 100.0)
+
+# ==========================================
+# SECTION 6: NCERT TEXTBOOK LIBRARY
 # ==========================================
 elif app_section == "📚 NCERT Textbook Library":
     st.subheader("📚 NCERT Textbook Library")
