@@ -4,7 +4,8 @@ import json
 import os
 import re
 from datetime import date, timedelta
-from groq import Groq
+from google import genai
+from google.genai import types
 from PIL import Image
 import streamlit as st
 
@@ -110,40 +111,36 @@ def clean_latex_output(text):
 
 
 # ==========================================
-# SECURE API CLIENT & ROBUST FALLBACK CALLER
+# SECURE GEMINI CLIENT INITIALIZATION
 # ==========================================
-api_key = st.secrets.get("GROQ_API_KEY") or os.environ.get("GROQ_API_KEY", "")
+api_key = st.secrets.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEY", "")
 
 if not api_key:
     st.error(
-        "⚠️ Groq API Key not found! Please configure it in your `.streamlit/secrets.toml` file."
+        "⚠️ Gemini API Key not found! Please configure `GEMINI_API_KEY` in your `.streamlit/secrets.toml` file."
     )
     st.stop()
 
-client = Groq(api_key=api_key)
+# Initialize the official Google GenAI client
+client = genai.Client(api_key=api_key)
 
-def call_groq_with_fallback(messages, max_tokens=2500, image_payload=False):
-    """Tries multiple production models to prevent 403 or deprecation errors."""
-    models_to_try = [
-        "llama-3.3-70b-versatile",
-        "llama-3.1-8b-instant",
-        "llama3-70b-8192"
-    ]
-    
+def call_gemini(prompt_contents, model_name="gemini-2.5-flash"):
+    """Helper to cleanly call the Gemini model with fallback support."""
+    models_to_try = [model_name, "gemini-2.5-flash-lite"]
     last_error = None
-    for model_name in models_to_try:
+    
+    for m in models_to_try:
         try:
-            chat_completion = client.chat.completions.create(
-                model=model_name,
-                messages=messages,
-                max_completion_tokens=max_tokens,
+            response = client.models.generate_content(
+                model=m,
+                contents=prompt_contents,
             )
-            return chat_completion.choices[0].message.content
+            return response.text
         except Exception as e:
             last_error = e
             continue
             
-    raise Exception(f"All model fallbacks failed. Last error: {last_error}")
+    raise Exception(f"All Gemini models failed. Last error: {last_error}")
 
 
 # ==========================================
@@ -249,7 +246,7 @@ st.markdown(
     """
     <div class="app-header">
         <h1>🎓 Aspirant AI</h1>
-        <p>Harvard-Tier Socratic Study Companion for Physics, Math, Chemistry, and Engineering Entrance Prep.</p>
+        <p>Harvard-Tier Socratic Study Companion for Physics, Math, Chemistry, and Engineering Entrance Prep (Powered by Gemini).</p>
     </div>
 """,
     unsafe_allow_html=True,
@@ -284,7 +281,6 @@ if nav_category == "🧠 Core AI Tutoring":
         "Select Tool",
         [
             "🤖 AI Study & Doubt Assistant",
-            "🎙️ Voice-Assisted Doubt Solver",
         ],
         label_visibility="collapsed",
     )
@@ -310,7 +306,7 @@ else:
 
 st.sidebar.markdown("---")
 st.sidebar.markdown(
-    "<div style='color: #64748B; font-size: 0.75rem; text-align: center;'>Powered by Groq & Llama 3</div>",
+    "<div style='color: #64748B; font-size: 0.75rem; text-align: center;'>Powered by Google Gemini 2.5</div>",
     unsafe_allow_html=True,
 )
 
@@ -319,7 +315,7 @@ st.sidebar.markdown(
 # ==========================================
 if app_section == "🤖 AI Study & Doubt Assistant":
     st.subheader("🤖 AI Study & Doubt Assistant")
-    st.markdown("Choose whether you want to analyze a worksheet image with Socratic hints or break down a difficult concept.")
+    st.markdown("Analyze worksheet images with Socratic hints or break down difficult concepts.")
 
     assistant_mode = st.selectbox(
         "Select Assistant Tool",
@@ -333,7 +329,7 @@ if app_section == "🤖 AI Study & Doubt Assistant":
 
     if assistant_mode == "📸 Socratic Hint Inspector (Camera / Gallery)":
         st.markdown("### 📸 Worksheet & Problem Analyzer")
-        st.markdown("Snap a photo or upload an image. Aspirant AI will guide you step-by-step **without** giving away the final answer!")
+        st.markdown("Upload or snap a photo of a problem. Aspirant AI will guide you step-by-step without spoiling the answer!")
 
         input_method = st.radio(
             "Choose Input Method", ["📁 Upload from Gallery", "📷 Capture with Camera"], horizontal=True
@@ -352,12 +348,6 @@ if app_section == "🤖 AI Study & Doubt Assistant":
         if image is not None:
             st.image(image, caption="Selected Problem", use_container_width=True)
 
-            buffered = io.BytesIO()
-            image.save(buffered, format=image.format if image.format else "JPEG")
-            img_bytes = buffered.getvalue()
-            encoded_image = base64.b64encode(img_bytes).decode("utf-8")
-            image_url = f"data:image/jpeg;base64,{encoded_image}"
-
             user_hint_query = st.text_input(
                 "Any specific doubt or where are you stuck?",
                 placeholder="e.g., I'm stuck on finding the moment of inertia component here.",
@@ -370,28 +360,17 @@ if app_section == "🤖 AI Study & Doubt Assistant":
                 
                 Provide a Socratic response:
                 1. Break down the core concepts involved (e.g., formulas, principles).
-                2. Give step-by-step guidance or guiding questions **without giving away the final answer**.
+                2. Give step-by-step guidance or guiding questions without giving away the final answer.
                 3. Point out any common pitfalls to avoid."""
 
-                with st.spinner("Analyzing problem via Groq..."):
+                with st.spinner("Analyzing problem via Gemini..."):
                     try:
-                        response_content = call_groq_with_fallback([
-                            {
-                                "role": "user",
-                                "content": [
-                                    {"type": "text", "text": HINT_PROMPT},
-                                    {
-                                        "type": "image_url",
-                                        "image_url": {"url": image_url},
-                                    },
-                                ],
-                            }
-                        ])
+                        response_content = call_gemini([image, HINT_PROMPT])
                         response_text = clean_latex_output(response_content)
                         st.markdown("### 💡 Socratic Hint Guide")
                         st.markdown(response_text)
                     except Exception as e:
-                        st.error(f"Analysis failed. Raw API Error: `{e}`")
+                        st.error(f"Analysis failed. Error: `{e}`")
 
     elif assistant_mode == "💡 Concept & Formula Solver":
         st.markdown("### 💡 Concept & Formula Breakdown")
@@ -406,17 +385,11 @@ if app_section == "🤖 AI Study & Doubt Assistant":
             if concept_query:
                 with st.spinner("Drafting explanation..."):
                     try:
-                        response_content = call_groq_with_fallback([
-                            {
-                                "role": "system",
-                                "content": (
-                                    "You are Aspirant AI, an expert physics, chemistry,"
-                                    " and math tutor. Provide crisp, high-signal"
-                                    " explanations tailored for competitive exams."
-                                ),
-                            },
-                            {"role": "user", "content": concept_query},
-                        ])
+                        prompt = (
+                            "You are Aspirant AI, an expert physics, chemistry, and math tutor. "
+                            f"Provide crisp, high-signal explanations tailored for competitive exams. Topic: {concept_query}"
+                        )
+                        response_content = call_gemini(prompt)
                         explanation_text = clean_latex_output(response_content)
                         st.markdown("### 📘 Explanation")
                         st.markdown(explanation_text)
@@ -426,37 +399,7 @@ if app_section == "🤖 AI Study & Doubt Assistant":
                 st.warning("Please type a concept or problem first.")
 
 # ==========================================
-# SECTION 2: VOICE-ASSISTED DOUBT SOLVER
-# ==========================================
-elif app_section == "🎙️ Voice-Assisted Doubt Solver":
-    st.subheader("🎙️ Voice-Assisted Doubt Solver")
-    st.markdown("Ask your physics, math, or chemistry doubt out loud using your microphone. Aspirant AI will transcribe it and provide an expert response!")
-
-    voice_audio = st.audio_input("🎙️ Record your doubt:")
-    if voice_audio is not None:
-        with st.spinner("Processing voice doubt via Whisper..."):
-            try:
-                audio_bytes = voice_audio.read()
-                transcription = client.audio.transcriptions.create(
-                    file=("voice_doubt.wav", audio_bytes),
-                    model="whisper-large-v3",
-                    response_format="text"
-                )
-                st.markdown(f"**You asked:** \"{transcription}\"")
-
-                with st.spinner("Generating expert response..."):
-                    response_content = call_groq_with_fallback([
-                        {"role": "system", "content": "You are Aspirant AI, an expert STEM tutor providing clear, concise, rigorous answers."},
-                        {"role": "user", "content": transcription}
-                    ])
-                    answer_text = clean_latex_output(response_content)
-                    st.markdown("### 💡 Aspirant AI Answer")
-                    st.markdown(answer_text)
-            except Exception as e:
-                st.error(f"Voice processing failed: {e}")
-
-# ==========================================
-# SECTION 3: AI FORMULA FLASHCARDS & SPACED REPETITION (SM-2)
+# SECTION 2: AI FORMULA FLASHCARDS & SPACED REPETITION (SM-2)
 # ==========================================
 elif app_section == "⚡ AI Formula Flashcards (SM-2 Spaced Repetition)":
     st.subheader("⚡ Spaced Repetition Flashcard Engine (SM-2)")
@@ -480,16 +423,13 @@ elif app_section == "⚡ AI Formula Flashcards (SM-2 Spaced Repetition)":
             with st.spinner("Compiling SM-2 optimized flashcards..."):
                 SM2_PROMPT = f"""You are Aspirant AI, an expert coach utilizing SuperMemo SM-2 principles.
                 Create 4 high-yield flashcards for {fc_class} {fc_subject} on '{fc_topic}'.
-                Format as JSON array of objects with keys: "card_id", "front_question", "back_answer":
+                Return ONLY valid raw JSON array of objects with keys: "card_id", "front_question", "back_answer":
                 [
                   {{"card_id": 1, "front_question": "...", "back_answer": "..."}}
                 ]"""
 
                 try:
-                    raw_json = call_groq_with_fallback([
-                        {"role": "system", "content": "Return valid JSON array only."},
-                        {"role": "user", "content": SM2_PROMPT},
-                    ]).strip()
+                    raw_json = call_gemini(SM2_PROMPT).strip()
                     if raw_json.startswith("```"):
                         raw_json = re.sub(r"^```(?:json)?\s*", "", raw_json)
                         raw_json = re.sub(r"\s*```$", "", raw_json)
@@ -518,11 +458,11 @@ elif app_section == "⚡ AI Formula Flashcards (SM-2 Spaced Repetition)":
         st.success("Your review ratings have been recorded for optimal interval scheduling! 🧠")
 
 # ==========================================
-# SECTION 4: FEYNMAN TEACH-BACK SIMULATOR
+# SECTION 3: FEYNMAN TEACH-BACK SIMULATOR
 # ==========================================
 elif app_section == "🎓 Feynman Teach-Back Simulator":
     st.subheader("🎓 Feynman Technique Teach-Back Simulator")
-    st.markdown("True mastery is being able to explain complex physics or math simply. Record your voice or type your explanation, and our Harvard-style AI professor will evaluate your clarity.")
+    st.markdown("True mastery is explaining complex physics or math simply. Type your explanation below and our Harvard-style AI professor will evaluate your clarity.")
 
     feynman_concept = st.text_input(
         "What concept are you teaching today?",
@@ -530,27 +470,9 @@ elif app_section == "🎓 Feynman Teach-Back Simulator":
         key="feynman_concept_input"
     )
 
-    feynman_audio = st.audio_input("🎙️ Click the microphone to explain the concept out loud:")
-
-    transcribed_explanation = ""
-    if feynman_audio is not None:
-        with st.spinner("Transcribing your audio using Whisper..."):
-            try:
-                audio_bytes = feynman_audio.read()
-                transcription = client.audio.transcriptions.create(
-                    file=("feynman_audio.wav", audio_bytes),
-                    model="whisper-large-v3",
-                    response_format="text"
-                )
-                transcribed_explanation = transcription
-                st.success(f"Successfully transcribed: \"{transcribed_explanation}\"")
-            except Exception as e:
-                st.error(f"Audio transcription failed: {e}")
-
     feynman_explanation = st.text_area(
-        "Or type/edit your explanation here:",
-        value=transcribed_explanation,
-        placeholder="Type your explanation here without overly relying on jargon...",
+        "Type your explanation here:",
+        placeholder="Explain the concept in your own words as simply as possible...",
         height=150,
         key="feynman_text_input"
     )
@@ -568,20 +490,17 @@ elif app_section == "🎓 Feynman Teach-Back Simulator":
                 3. **Socratic Follow-Up**: Ask one sharp probing question to test their deep understanding without giving the answer away."""
 
                 try:
-                    response_content = call_groq_with_fallback([
-                        {"role": "system", "content": "You are a rigorous Harvard STEM professor."},
-                        {"role": "user", "content": FEYNMAN_PROMPT}
-                    ])
+                    response_content = call_gemini(FEYNMAN_PROMPT)
                     feedback = clean_latex_output(response_content)
                     st.markdown("### 🏛️ Professor's Feedback & Socratic Prompt")
                     st.markdown(feedback)
                 except Exception as e:
                     st.error(f"Evaluation failed: {e}")
         else:
-            st.warning("Please provide both a concept and your verbal or written explanation.")
+            st.warning("Please provide both a concept and your written explanation.")
 
 # ==========================================
-# SECTION 5: INTERACTIVE MOCK TEST & QUIZ GENERATOR
+# SECTION 4: INTERACTIVE MOCK TEST & QUIZ GENERATOR
 # ==========================================
 elif app_section == "📝 Interactive Mock Test & Quiz Generator":
     st.subheader("📝 Interactive Mock Test & Quiz Generator")
@@ -612,7 +531,7 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
             with st.spinner("Generating 3 high-yield multiple-choice questions..."):
                 QUIZ_PROMPT = f"""You are Aspirant AI, an expert exam creator for {quiz_class} {quiz_subject}.
                 Create 3 multiple-choice questions on '{quiz_topic}' at '{quiz_difficulty}' level.
-                Format as a JSON array of objects with keys: "question_id", "question_text", "options" (array of 4 strings), "correct_answer" (exact string matching one of the options), "explanation".
+                Return ONLY valid raw JSON array of objects with keys: "question_id", "question_text", "options" (array of 4 strings), "correct_answer" (exact string matching one of the options), "explanation".
                 Example:
                 [
                   {{
@@ -624,10 +543,7 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
                   }}
                 ]"""
                 try:
-                    raw_json = call_groq_with_fallback([
-                        {"role": "system", "content": "Return valid JSON array only."},
-                        {"role": "user", "content": QUIZ_PROMPT}
-                    ]).strip()
+                    raw_json = call_gemini(QUIZ_PROMPT).strip()
                     if raw_json.startswith("```"):
                         raw_json = re.sub(r"^```(?:json)?\s*", "", raw_json)
                         raw_json = re.sub(r"\s*```$", "", raw_json)
@@ -678,7 +594,7 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
             st.metric(label="Final Score", value=f"{score} / {total}")
 
 # ==========================================
-# SECTION 6: JEE/BOARD STUDY PLANNER & TRACKER
+# SECTION 5: JEE/BOARD STUDY PLANNER & TRACKER
 # ==========================================
 elif app_section == "🎯 JEE/Board Study Planner & Tracker":
     st.subheader("🎯 JEE/Board Study Planner & Tracker")
@@ -694,10 +610,7 @@ elif app_section == "🎯 JEE/Board Study Planner & Tracker":
             The target exam date is {exam_date}.
             Provide a structured, week-by-week preparation roadmap with milestones, priority topics in Physics, Chemistry, and Mathematics, and weekly mock test strategies."""
             try:
-                response_content = call_groq_with_fallback([
-                    {"role": "system", "content": "You are an elite academic strategist."},
-                    {"role": "user", "content": PLAN_PROMPT}
-                ])
+                response_content = call_gemini(PLAN_PROMPT)
                 plan_text = clean_latex_output(response_content)
                 st.markdown("### 🗓️ Your Personalized Study Roadmap")
                 st.markdown(plan_text)
@@ -705,7 +618,7 @@ elif app_section == "🎯 JEE/Board Study Planner & Tracker":
                 st.error(f"Failed to generate study plan: {e}")
 
 # ==========================================
-# SECTION 7: NCERT TEXTBOOK LIBRARY
+# SECTION 6: NCERT TEXTBOOK LIBRARY
 # ==========================================
 elif app_section == "📚 NCERT Textbook Library":
     st.subheader("📚 Official NCERT Textbook Library")
