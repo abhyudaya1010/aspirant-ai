@@ -129,7 +129,7 @@ api_key = st.secrets.get("GROQ_API_KEY") or os.environ.get("GROQ_API_KEY", "")
 
 if not api_key:
     st.error(
-        "⚠️ Groq API Key not found! Please configure it in your `.streamlit/secrets.toml` file."
+        "⚠️️ Groq API Key not found! Please configure it in your `.streamlit/secrets.toml` file."
     )
     st.stop()
 
@@ -299,7 +299,7 @@ else:
 
 st.sidebar.markdown("---")
 st.sidebar.markdown(
-    "<div style='color: #64748B; font-size: 0.75rem; text-align: center;'>Powered by Groq & Llama 3</div>",
+    "<div style='color: #64748B; font-size: 0.75rem; text-align: center;'>Powered by Groq & Llama 3.3</div>",
     unsafe_allow_html=True,
 )
 
@@ -362,10 +362,10 @@ if app_section == "🤖 AI Study & Doubt Assistant":
                 2. Give step-by-step guidance or guiding questions **without giving away the final answer**.
                 3. Point out any common pitfalls to avoid."""
 
-                with st.spinner("Analyzing problem via Groq vision..."):
+                with st.spinner("Analyzing problem via vision model..."):
                     try:
                         chat_completion = client.chat.completions.create(
-                            model="qwen/qwen2-vl-7b-instruct",
+                            model="llama-3.3-70b-versatile",
                             messages=[
                                 {
                                     "role": "user",
@@ -402,7 +402,7 @@ if app_section == "🤖 AI Study & Doubt Assistant":
                 with st.spinner("Drafting explanation..."):
                     try:
                         chat_completion = client.chat.completions.create(
-                            model="openai/gpt-oss-120b",
+                            model="llama-3.3-70b-versatile",
                             messages=[
                                 {
                                     "role": "system",
@@ -447,7 +447,7 @@ elif app_section == "🎙️ Voice-Assisted Doubt Solver":
 
                 with st.spinner("Generating expert response..."):
                     chat_completion = client.chat.completions.create(
-                        model="openai/gpt-oss-120b",
+                        model="llama-3.3-70b-versatile",
                         messages=[
                             {"role": "system", "content": "You are Aspirant AI, an expert STEM tutor providing clear, concise, rigorous answers."},
                             {"role": "user", "content": transcription}
@@ -492,7 +492,7 @@ elif app_section == "⚡ AI Formula Flashcards (SM-2 Spaced Repetition)":
 
                 try:
                     chat_completion = client.chat.completions.create(
-                        model="openai/gpt-oss-120b",
+                        model="llama-3.3-70b-versatile",
                         messages=[
                             {"role": "system", "content": "Return valid JSON array only."},
                             {"role": "user", "content": SM2_PROMPT},
@@ -579,7 +579,7 @@ elif app_section == "🎓 Feynman Teach-Back Simulator":
 
                 try:
                     chat_completion = client.chat.completions.create(
-                        model="openai/gpt-oss-120b",
+                        model="llama-3.3-70b-versatile",
                         messages=[
                             {"role": "system", "content": "You are a rigorous Harvard STEM professor."},
                             {"role": "user", "content": FEYNMAN_PROMPT}
@@ -639,7 +639,7 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
                 ]"""
                 try:
                     chat_completion = client.chat.completions.create(
-                        model="openai/gpt-oss-120b",
+                        model="llama-3.3-70b-versatile",
                         messages=[
                             {"role": "system", "content": "Return valid JSON array only."},
                             {"role": "user", "content": QUIZ_PROMPT}
@@ -714,7 +714,7 @@ elif app_section == "🎯 JEE/Board Study Planner & Tracker":
             Provide a structured, week-by-week preparation roadmap with milestones, priority topics in Physics, Chemistry, and Mathematics, and weekly mock test strategies."""
             try:
                 chat_completion = client.chat.completions.create(
-                    model="openai/gpt-oss-120b",
+                    model="llama-3.3-70b-versatile",
                     messages=[
                         {"role": "system", "content": "You are an elite academic strategist."},
                         {"role": "user", "content": PLAN_PROMPT}
@@ -747,4 +747,3 @@ elif app_section == "📚 NCERT Textbook Library":
         with col_c2:
             st.markdown(f"[📥 Download PDF]({ch['url']})", unsafe_allow_html=True)
         st.markdown("---")
-        
