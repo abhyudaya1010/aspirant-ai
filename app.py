@@ -19,14 +19,11 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    /* Global Theme & Background */
     .main {
         background: #090D16;
         color: #F1F5F9;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
-    
-    /* App Header Banner */
     .app-header {
         background: linear-gradient(135deg, #1E1B4B 0%, #0F172A 50%, #020617 100%);
         padding: 2.5rem 3rem;
@@ -51,15 +48,11 @@ st.markdown("""
         margin-bottom: 0;
         font-weight: 400;
     }
-
-    /* Section Headers */
     h2, h3 {
         color: #F8FAFC !important;
         font-weight: 700;
         letter-spacing: -0.02em;
     }
-
-    /* Custom Buttons */
     .stButton > button {
         background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
         color: white;
@@ -75,8 +68,6 @@ st.markdown("""
         box-shadow: 0 6px 16px rgba(79, 70, 229, 0.5);
         transform: translateY(-1px);
     }
-
-    /* Sidebar Customization */
     section[data-testid="stSidebar"] {
         background-color: #030712;
         border-right: 1px solid #1E293B;
@@ -91,8 +82,6 @@ st.markdown("""
         text-transform: uppercase;
         letter-spacing: 0.05em;
     }
-
-    /* Cards / Containers */
     div.stContainer, .streamlit-expanderHeader {
         background: #0F172A;
         padding: 1.25rem;
@@ -101,8 +90,6 @@ st.markdown("""
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
         margin-bottom: 1rem;
     }
-    
-    /* Metrics & Badges */
     [data-testid="stMetricValue"] {
         color: #818CF8 !important;
         font-weight: 700;
@@ -123,17 +110,41 @@ def clean_latex_output(text):
 
 
 # ==========================================
-# SECURE API CLIENT INITIALIZATION
+# SECURE API CLIENT & ROBUST FALLBACK CALLER
 # ==========================================
 api_key = st.secrets.get("GROQ_API_KEY") or os.environ.get("GROQ_API_KEY", "")
 
 if not api_key:
     st.error(
-        "⚠️️ Groq API Key not found! Please configure it in your `.streamlit/secrets.toml` file."
+        "⚠️ Groq API Key not found! Please configure it in your `.streamlit/secrets.toml` file."
     )
     st.stop()
 
 client = Groq(api_key=api_key)
+
+def call_groq_with_fallback(messages, max_tokens=2500, image_payload=False):
+    """Tries multiple production models to prevent 403 or deprecation errors."""
+    models_to_try = [
+        "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant",
+        "llama3-70b-8192"
+    ]
+    
+    last_error = None
+    for model_name in models_to_try:
+        try:
+            chat_completion = client.chat.completions.create(
+                model=model_name,
+                messages=messages,
+                max_completion_tokens=max_tokens,
+            )
+            return chat_completion.choices[0].message.content
+        except Exception as e:
+            last_error = e
+            continue
+            
+    raise Exception(f"All model fallbacks failed. Last error: {last_error}")
+
 
 # ==========================================
 # NCERT DATABASE (Classes 11 - 12)
@@ -299,7 +310,7 @@ else:
 
 st.sidebar.markdown("---")
 st.sidebar.markdown(
-    "<div style='color: #64748B; font-size: 0.75rem; text-align: center;'>Powered by Groq & Llama 3.3</div>",
+    "<div style='color: #64748B; font-size: 0.75rem; text-align: center;'>Powered by Groq & Llama 3</div>",
     unsafe_allow_html=True,
 )
 
@@ -362,27 +373,21 @@ if app_section == "🤖 AI Study & Doubt Assistant":
                 2. Give step-by-step guidance or guiding questions **without giving away the final answer**.
                 3. Point out any common pitfalls to avoid."""
 
-                with st.spinner("Analyzing problem via vision model..."):
+                with st.spinner("Analyzing problem via Groq..."):
                     try:
-                        chat_completion = client.chat.completions.create(
-                            model="llama-3.3-70b-versatile",
-                            messages=[
-                                {
-                                    "role": "user",
-                                    "content": [
-                                        {"type": "text", "text": HINT_PROMPT},
-                                        {
-                                            "type": "image_url",
-                                            "image_url": {"url": image_url},
-                                        },
-                                    ],
-                                }
-                            ],
-                            max_completion_tokens=2000,
-                        )
-                        response_text = clean_latex_output(
-                            chat_completion.choices[0].message.content
-                        )
+                        response_content = call_groq_with_fallback([
+                            {
+                                "role": "user",
+                                "content": [
+                                    {"type": "text", "text": HINT_PROMPT},
+                                    {
+                                        "type": "image_url",
+                                        "image_url": {"url": image_url},
+                                    },
+                                ],
+                            }
+                        ])
+                        response_text = clean_latex_output(response_content)
                         st.markdown("### 💡 Socratic Hint Guide")
                         st.markdown(response_text)
                     except Exception as e:
@@ -401,24 +406,18 @@ if app_section == "🤖 AI Study & Doubt Assistant":
             if concept_query:
                 with st.spinner("Drafting explanation..."):
                     try:
-                        chat_completion = client.chat.completions.create(
-                            model="llama-3.3-70b-versatile",
-                            messages=[
-                                {
-                                    "role": "system",
-                                    "content": (
-                                        "You are Aspirant AI, an expert physics, chemistry,"
-                                        " and math tutor. Provide crisp, high-signal"
-                                        " explanations tailored for competitive exams."
-                                    ),
-                                },
-                                {"role": "user", "content": concept_query},
-                            ],
-                            max_completion_tokens=2500,
-                        )
-                        explanation_text = clean_latex_output(
-                            chat_completion.choices[0].message.content
-                        )
+                        response_content = call_groq_with_fallback([
+                            {
+                                "role": "system",
+                                "content": (
+                                    "You are Aspirant AI, an expert physics, chemistry,"
+                                    " and math tutor. Provide crisp, high-signal"
+                                    " explanations tailored for competitive exams."
+                                ),
+                            },
+                            {"role": "user", "content": concept_query},
+                        ])
+                        explanation_text = clean_latex_output(response_content)
                         st.markdown("### 📘 Explanation")
                         st.markdown(explanation_text)
                     except Exception as e:
@@ -446,15 +445,11 @@ elif app_section == "🎙️ Voice-Assisted Doubt Solver":
                 st.markdown(f"**You asked:** \"{transcription}\"")
 
                 with st.spinner("Generating expert response..."):
-                    chat_completion = client.chat.completions.create(
-                        model="llama-3.3-70b-versatile",
-                        messages=[
-                            {"role": "system", "content": "You are Aspirant AI, an expert STEM tutor providing clear, concise, rigorous answers."},
-                            {"role": "user", "content": transcription}
-                        ],
-                        max_completion_tokens=2000,
-                    )
-                    answer_text = clean_latex_output(chat_completion.choices[0].message.content)
+                    response_content = call_groq_with_fallback([
+                        {"role": "system", "content": "You are Aspirant AI, an expert STEM tutor providing clear, concise, rigorous answers."},
+                        {"role": "user", "content": transcription}
+                    ])
+                    answer_text = clean_latex_output(response_content)
                     st.markdown("### 💡 Aspirant AI Answer")
                     st.markdown(answer_text)
             except Exception as e:
@@ -491,15 +486,10 @@ elif app_section == "⚡ AI Formula Flashcards (SM-2 Spaced Repetition)":
                 ]"""
 
                 try:
-                    chat_completion = client.chat.completions.create(
-                        model="llama-3.3-70b-versatile",
-                        messages=[
-                            {"role": "system", "content": "Return valid JSON array only."},
-                            {"role": "user", "content": SM2_PROMPT},
-                        ],
-                        max_completion_tokens=2000,
-                    )
-                    raw_json = chat_completion.choices[0].message.content.strip()
+                    raw_json = call_groq_with_fallback([
+                        {"role": "system", "content": "Return valid JSON array only."},
+                        {"role": "user", "content": SM2_PROMPT},
+                    ]).strip()
                     if raw_json.startswith("```"):
                         raw_json = re.sub(r"^```(?:json)?\s*", "", raw_json)
                         raw_json = re.sub(r"\s*```$", "", raw_json)
@@ -578,15 +568,11 @@ elif app_section == "🎓 Feynman Teach-Back Simulator":
                 3. **Socratic Follow-Up**: Ask one sharp probing question to test their deep understanding without giving the answer away."""
 
                 try:
-                    chat_completion = client.chat.completions.create(
-                        model="llama-3.3-70b-versatile",
-                        messages=[
-                            {"role": "system", "content": "You are a rigorous Harvard STEM professor."},
-                            {"role": "user", "content": FEYNMAN_PROMPT}
-                        ],
-                        max_completion_tokens=2000,
-                    )
-                    feedback = clean_latex_output(chat_completion.choices[0].message.content)
+                    response_content = call_groq_with_fallback([
+                        {"role": "system", "content": "You are a rigorous Harvard STEM professor."},
+                        {"role": "user", "content": FEYNMAN_PROMPT}
+                    ])
+                    feedback = clean_latex_output(response_content)
                     st.markdown("### 🏛️ Professor's Feedback & Socratic Prompt")
                     st.markdown(feedback)
                 except Exception as e:
@@ -638,15 +624,10 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
                   }}
                 ]"""
                 try:
-                    chat_completion = client.chat.completions.create(
-                        model="llama-3.3-70b-versatile",
-                        messages=[
-                            {"role": "system", "content": "Return valid JSON array only."},
-                            {"role": "user", "content": QUIZ_PROMPT}
-                        ],
-                        max_completion_tokens=2500,
-                    )
-                    raw_json = chat_completion.choices[0].message.content.strip()
+                    raw_json = call_groq_with_fallback([
+                        {"role": "system", "content": "Return valid JSON array only."},
+                        {"role": "user", "content": QUIZ_PROMPT}
+                    ]).strip()
                     if raw_json.startswith("```"):
                         raw_json = re.sub(r"^```(?:json)?\s*", "", raw_json)
                         raw_json = re.sub(r"\s*```$", "", raw_json)
@@ -713,15 +694,11 @@ elif app_section == "🎯 JEE/Board Study Planner & Tracker":
             The target exam date is {exam_date}.
             Provide a structured, week-by-week preparation roadmap with milestones, priority topics in Physics, Chemistry, and Mathematics, and weekly mock test strategies."""
             try:
-                chat_completion = client.chat.completions.create(
-                    model="llama-3.3-70b-versatile",
-                    messages=[
-                        {"role": "system", "content": "You are an elite academic strategist."},
-                        {"role": "user", "content": PLAN_PROMPT}
-                    ],
-                    max_completion_tokens=2500,
-                )
-                plan_text = clean_latex_output(chat_completion.choices[0].message.content)
+                response_content = call_groq_with_fallback([
+                    {"role": "system", "content": "You are an elite academic strategist."},
+                    {"role": "user", "content": PLAN_PROMPT}
+                ])
+                plan_text = clean_latex_output(response_content)
                 st.markdown("### 🗓️ Your Personalized Study Roadmap")
                 st.markdown(plan_text)
             except Exception as e:
