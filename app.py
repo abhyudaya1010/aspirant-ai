@@ -141,7 +141,7 @@ def call_ai_bulletproof(prompt_contents):
     except Exception as e:
         last_error = e
 
-    # 2. Try OpenRouter Second (Bulletproof Fallback against blocks/limits)
+    # 2. Try OpenRouter Second (Bulletproof Fallback with active models)
     try:
         or_key = st.secrets.get("OPENROUTER_API_KEY") or os.environ.get("OPENROUTER_API_KEY", "")
         if or_key:
@@ -152,8 +152,8 @@ def call_ai_bulletproof(prompt_contents):
                 "X-Title": "Aspirant AI"
             }
             models_to_try = [
-                "deepseek/deepseek-chat:free",
                 "google/gemini-flash-1.5",
+                "meta-llama/llama-3.3-70b-instruct:free",
                 "meta-llama/llama-3.1-8b-instruct:free"
             ]
             for model_name in models_to_try:
@@ -168,6 +168,8 @@ def call_ai_bulletproof(prompt_contents):
                         content = data["choices"][0]["message"]["content"]
                         if content:
                             return content
+                    else:
+                        last_error = f"OpenRouter status {resp.status_code}: {resp.text}"
                 except Exception as e:
                     last_error = e
                     continue
@@ -519,96 +521,4 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
                 ]"""
                 try:
                     raw_json = call_ai_bulletproof(QUIZ_PROMPT).strip()
-                    if raw_json.startswith("```"):
-                        raw_json = re.sub(r"^```(?:json)?\s*", "", raw_json)
-                        raw_json = re.sub(r"\s*```$", "", raw_json)
-                    st.session_state.quiz_data = json.loads(raw_json)
-                    st.session_state.user_answers = {}
-                    st.session_state.quiz_submitted = False
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Failed to generate quiz: {e}")
-        else:
-            st.warning("Please enter a topic for the quiz.")
-
-    if st.session_state.quiz_data:
-        st.markdown("---")
-        st.markdown(f"### 📋 Practice Quiz: {quiz_topic}")
-        for q in st.session_state.quiz_data:
-            qid = q["question_id"]
-            st.markdown(f"**Q{qid}: {clean_latex_output(q['question_text'])}**")
-            ans = st.radio(
-                f"Select option for Q{qid}",
-                q["options"],
-                key=f"q_{qid}",
-                label_visibility="collapsed"
-            )
-            st.session_state.user_answers[qid] = ans
-            st.markdown("")
-
-        if st.button("Submit Quiz"):
-            st.session_state.quiz_submitted = True
-            st.rerun()
-
-        if st.session_state.quiz_submitted:
-            st.markdown("---")
-            st.markdown("### 📊 Quiz Results & Solutions")
-            score = 0
-            total = len(st.session_state.quiz_data)
-            for q in st.session_state.quiz_data:
-                qid = q["question_id"]
-                user_ans = st.session_state.user_answers.get(qid)
-                correct = q["correct_answer"]
-                if user_ans == correct:
-                    score += 1
-                    st.success(f"**Q{qid}: Correct!** 🎉")
-                else:
-                    st.error(f"**Q{qid}: Incorrect.** Your answer: `{user_ans}` | Correct answer: `{correct}`")
-                with st.expander(f"📖 View Explanation for Q{qid}"):
-                    st.markdown(clean_latex_output(q["explanation"]))
-            st.metric(label="Final Score", value=f"{score} / {total}")
-
-# ==========================================
-# SECTION 5: JEE/BOARD STUDY PLANNER & TRACKER
-# ==========================================
-elif app_section == "🎯 JEE/Board Study Planner & Tracker":
-    st.subheader("🎯 JEE/Board Study Planner & Tracker")
-    st.markdown("Build a customized milestone-driven study plan for your upcoming board exams and competitive entrance tests.")
-
-    plan_class = st.selectbox("Target Class", ["Class 11", "Class 12"], key="plan_class")
-    target_exam = st.selectbox("Primary Target", ["JEE Main & Advanced", "Secondary School Board Exams", "Both (Integrated)"])
-    exam_date = st.date_input("Target Exam Date", value=date.today() + timedelta(days=120))
-
-    if st.button("Generate Custom Study Schedule"):
-        with st.spinner("Crafting customized preparation roadmap..."):
-            PLAN_PROMPT = f"""You are an elite study strategist for {plan_class} students preparing for {target_exam} aiming for top-tier results.
-            The target exam date is {exam_date}.
-            Provide a structured, week-by-week preparation roadmap with milestones, priority topics in Physics, Chemistry, and Mathematics, and weekly mock test strategies."""
-            try:
-                response_content = call_ai_bulletproof(PLAN_PROMPT)
-                plan_text = clean_latex_output(response_content)
-                st.markdown("### 🗓️ Your Personalized Study Roadmap")
-                st.markdown(plan_text)
-            except Exception as e:
-                st.error(f"Failed to generate study plan: {e}")
-
-# ==========================================
-# SECTION 6: NCERT TEXTBOOK LIBRARY
-# ==========================================
-elif app_section == "📚 NCERT Textbook Library":
-    st.subheader("📚 Official NCERT Textbook Library")
-    st.markdown("Access direct links to official NCERT PDF textbooks for Physics, Chemistry, and Mathematics (Classes 11 & 12).")
-
-    lib_class = st.selectbox("Select Class", ["Class 12", "Class 11"], key="lib_class")
-    lib_subject = st.selectbox("Select Subject", ["Physics", "Chemistry", "Mathematics"], key="lib_subject")
-
-    chapters = NCERT_FULL_DATABASE.get(lib_class, {}).get(lib_subject, [])
-    st.markdown(f"### 📖 {lib_class} - {lib_subject} Chapters")
-    
-    for ch in chapters:
-        col_c1, col_c2 = st.columns([4, 1])
-        with col_c1:
-            st.markdown(f"**{ch['name']}**")
-        with col_c2:
-            st.markdown(f"[📥 Download PDF]({ch['url']})", unsafe_allow_html=True)
-        st.markdown("---")
+                    if raw_json.startswith("
