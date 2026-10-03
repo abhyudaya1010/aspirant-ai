@@ -398,12 +398,12 @@ elif app_section == "⚡ AI Formula Flashcards (SM-2 Spaced Repetition)":
     if st.button("Generate Spaced Repetition Deck"):
         if fc_topic:
             with st.spinner("Compiling SM-2 optimized flashcards..."):
-                SM2_PROMPT = f"""You are Aspirant AI, an expert coach utilizing SuperMemo SM-2 principles.
-                Create 4 high-yield flashcards for {fc_class} {fc_subject} on '{fc_topic}'.
-                Return ONLY valid raw JSON array of objects with keys: "card_id", "front_question", "back_answer":
-                [
-                  {{"card_id": 1, "front_question": "...", "back_answer": "..."}}
-                ]"""
+                SM2_PROMPT = (
+                    f"You are Aspirant AI, an expert coach utilizing SuperMemo SM-2 principles. "
+                    f"Create 4 high-yield flashcards for {fc_class} {fc_subject} on '{fc_topic}'. "
+                    'Return ONLY valid raw JSON array of objects with keys: "card_id", "front_question", "back_answer". '
+                    'Example format: [{"card_id": 1, "front_question": "...", "back_answer": "..."}]'
+                )
 
                 try:
                     raw_json = call_ai_bulletproof(SM2_PROMPT).strip()
@@ -457,14 +457,12 @@ elif app_section == "🎓 Feynman Teach-Back Simulator":
     if st.button("Evaluate My Teach-Back"):
         if feynman_concept and feynman_explanation:
             with st.spinner("Harvard Professor evaluating your conceptual clarity..."):
-                FEYNMAN_PROMPT = f"""You are a rigorous Harvard physics/math professor utilizing the Feynman technique.
-                The student is trying to explain the concept of '{feynman_concept}'.
-                Here is their explanation: '{feynman_explanation}'
-                
-                Provide your evaluation:
-                1. **Conceptual Accuracy & Gaps**: Point out any misunderstandings or missing nuances.
-                2. **Clarity Score**: Rate from 1 to 5.
-                3. **Socratic Follow-Up**: Ask one sharp probing question to test their deep understanding without giving the answer away."""
+                FEYNMAN_PROMPT = (
+                    "You are a rigorous Harvard physics/math professor utilizing the Feynman technique. "
+                    f"The student is trying to explain the concept of '{feynman_concept}'. "
+                    f"Here is their explanation: '{feynman_explanation}'. "
+                    "Provide your evaluation: 1. Conceptual Accuracy & Gaps, 2. Clarity Score (1-5), 3. Socratic Follow-Up question."
+                )
 
                 try:
                     response_content = call_ai_bulletproof(FEYNMAN_PROMPT)
@@ -506,19 +504,106 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
     if st.button("Generate Practice Quiz"):
         if quiz_topic:
             with st.spinner("Generating 3 high-yield multiple-choice questions..."):
-                QUIZ_PROMPT = f"""You are Aspirant AI, an expert exam creator for {quiz_class} {quiz_subject}.
-                Create 3 multiple-choice questions on '{quiz_topic}' at '{quiz_difficulty}' level.
-                Return ONLY valid raw JSON array of objects with keys: "question_id", "question_text", "options" (array of 4 strings), "correct_answer" (exact string matching one of the options), "explanation".
-                Example:
-                [
-                  {{
-                    "question_id": 1,
-                    "question_text": "...",
-                    "options": ["A) ...", "B) ...", "C) ...", "D) ..."],
-                    "correct_answer": "A) ...",
-                    "explanation": "..."
-                  }}
-                ]"""
+                QUIZ_PROMPT = (
+                    f"You are Aspirant AI, an expert exam creator for {quiz_class} {quiz_subject}. "
+                    f"Create 3 multiple-choice questions on '{quiz_topic}' at '{quiz_difficulty}' level. "
+                    'Return ONLY valid raw JSON array of objects with keys: "question_id", "question_text", "options" (array of 4 strings), "correct_answer", "explanation". '
+                    'Example format: [{"question_id": 1, "question_text": "...", "options": ["A) ...", "B) ...", "C) ...", "D) ..."], "correct_answer": "...", "explanation": "..."}]'
+                )
                 try:
                     raw_json = call_ai_bulletproof(QUIZ_PROMPT).strip()
-                    if raw_json.startswith("
+                    if raw_json.startswith("```"):
+                        raw_json = re.sub(r"^```(?:json)?\s*", "", raw_json)
+                        raw_json = re.sub(r"\s*```$", "", raw_json)
+                    st.session_state.quiz_data = json.loads(raw_json)
+                    st.session_state.user_answers = {}
+                    st.session_state.quiz_submitted = False
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Failed to generate quiz: {e}")
+        else:
+            st.warning("Please enter a topic for the quiz.")
+
+    if st.session_state.quiz_data:
+        st.markdown("---")
+        st.markdown(f"### 📋 Practice Quiz: {quiz_topic}")
+        for q in st.session_state.quiz_data:
+            qid = q["question_id"]
+            st.markdown(f"**Q{qid}: {clean_latex_output(q['question_text'])}**")
+            ans = st.radio(
+                f"Select option for Q{qid}",
+                q["options"],
+                key=f"q_{qid}",
+                label_visibility="collapsed"
+            )
+            st.session_state.user_answers[qid] = ans
+            st.markdown("")
+
+        if st.button("Submit Quiz"):
+            st.session_state.quiz_submitted = True
+            st.rerun()
+
+        if st.session_state.quiz_submitted:
+            st.markdown("---")
+            st.markdown("### 📊 Quiz Results & Solutions")
+            score = 0
+            total = len(st.session_state.quiz_data)
+            for q in st.session_state.quiz_data:
+                qid = q["question_id"]
+                user_ans = st.session_state.user_answers.get(qid)
+                correct = q["correct_answer"]
+                if user_ans == correct:
+                    score += 1
+                    st.success(f"**Q{qid}: Correct!** 🎉")
+                else:
+                    st.error(f"**Q{qid}: Incorrect.** Your answer: `{user_ans}` | Correct answer: `{correct}`")
+                with st.expander(f"📖 View Explanation for Q{qid}"):
+                    st.markdown(clean_latex_output(q["explanation"]))
+            st.metric(label="Final Score", value=f"{score} / {total}")
+
+# ==========================================
+# SECTION 5: JEE/BOARD STUDY PLANNER & TRACKER
+# ==========================================
+elif app_section == "🎯 JEE/Board Study Planner & Tracker":
+    st.subheader("🎯 JEE/Board Study Planner & Tracker")
+    st.markdown("Build a customized milestone-driven study plan for your upcoming board exams and competitive entrance tests.")
+
+    plan_class = st.selectbox("Target Class", ["Class 11", "Class 12"], key="plan_class")
+    target_exam = st.selectbox("Primary Target", ["JEE Main & Advanced", "Secondary School Board Exams", "Both (Integrated)"])
+    exam_date = st.date_input("Target Exam Date", value=date.today() + timedelta(days=120))
+
+    if st.button("Generate Custom Study Schedule"):
+        with st.spinner("Crafting customized preparation roadmap..."):
+            PLAN_PROMPT = (
+                f"You are an elite study strategist for {plan_class} students preparing for {target_exam} aiming for top-tier results. "
+                f"The target exam date is {exam_date}. "
+                "Provide a structured, week-by-week preparation roadmap with milestones, priority topics in Physics, Chemistry, and Mathematics, and weekly mock test strategies."
+            )
+            try:
+                response_content = call_ai_bulletproof(PLAN_PROMPT)
+                plan_text = clean_latex_output(response_content)
+                st.markdown("### 🗓️ Your Personalized Study Roadmap")
+                st.markdown(plan_text)
+            except Exception as e:
+                st.error(f"Failed to generate study plan: {e}")
+
+# ==========================================
+# SECTION 6: NCERT TEXTBOOK LIBRARY
+# ==========================================
+elif app_section == "📚 NCERT Textbook Library":
+    st.subheader("📚 Official NCERT Textbook Library")
+    st.markdown("Access direct links to official NCERT PDF textbooks for Physics, Chemistry, and Mathematics (Classes 11 & 12).")
+
+    lib_class = st.selectbox("Select Class", ["Class 12", "Class 11"], key="lib_class")
+    lib_subject = st.selectbox("Select Subject", ["Physics", "Chemistry", "Mathematics"], key="lib_subject")
+
+    chapters = NCERT_FULL_DATABASE.get(lib_class, {}).get(lib_subject, [])
+    st.markdown(f"### 📖 {lib_class} - {lib_subject} Chapters")
+    
+    for ch in chapters:
+        col_c1, col_c2 = st.columns([4, 1])
+        with col_c1:
+            st.markdown(f"**{ch['name']}**")
+        with col_c2:
+            st.markdown(f"[📥 Download PDF]({ch['url']})", unsafe_allow_html=True)
+        st.markdown("---")
