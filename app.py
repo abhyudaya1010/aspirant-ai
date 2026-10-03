@@ -141,7 +141,7 @@ def call_ai_bulletproof(prompt_contents):
     except Exception as e:
         last_error = e
 
-    # 2. Try OpenRouter Second (Bulletproof Fallback with active models)
+    # 2. Try OpenRouter Second (Updated with valid free/standard model strings)
     try:
         or_key = st.secrets.get("OPENROUTER_API_KEY") or os.environ.get("OPENROUTER_API_KEY", "")
         if or_key:
@@ -153,8 +153,8 @@ def call_ai_bulletproof(prompt_contents):
             }
             models_to_try = [
                 "google/gemini-flash-1.5",
-                "meta-llama/llama-3.3-70b-instruct:free",
-                "meta-llama/llama-3.1-8b-instruct:free"
+                "meta-llama/llama-3.1-8b-instruct",
+                "meta-llama/llama-3.3-70b-instruct"
             ]
             for model_name in models_to_try:
                 try:
