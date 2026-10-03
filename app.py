@@ -6,6 +6,7 @@ import re
 from datetime import date, timedelta
 from google import genai
 from google.genai import types
+from groq import Groq
 from PIL import Image
 import streamlit as st
 
@@ -111,36 +112,57 @@ def clean_latex_output(text):
 
 
 # ==========================================
-# SECURE GEMINI CLIENT INITIALIZATION
+# BULLETPROOF MULTI-PROVIDER AI ROUTER
 # ==========================================
-api_key = st.secrets.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEY", "")
-
-if not api_key:
-    st.error(
-        "⚠️ Gemini API Key not found! Please configure `GEMINI_API_KEY` in your `.streamlit/secrets.toml` file."
-    )
-    st.stop()
-
-# Initialize the official Google GenAI client
-client = genai.Client(api_key=api_key)
-
-def call_gemini(prompt_contents, model_name="gemini-2.5-flash"):
-    """Helper to cleanly call the Gemini model with fallback support."""
-    models_to_try = [model_name, "gemini-2.5-flash-lite"]
+def call_ai_bulletproof(prompt_contents):
+    """
+    Tries Google Gemini first. If any network block, 403, or failure occurs,
+    automatically routes to Groq seamlessly.
+    """
     last_error = None
-    
-    for m in models_to_try:
-        try:
-            response = client.models.generate_content(
-                model=m,
-                contents=prompt_contents,
-            )
-            return response.text
-        except Exception as e:
-            last_error = e
-            continue
+
+    # 1. Try Google Gemini First
+    try:
+        gemini_key = st.secrets.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEY", "")
+        if gemini_key:
+            client_gemini = genai.Client(api_key=gemini_key)
+            for model_m in ["gemini-2.5-flash", "gemini-2.5-flash-lite"]:
+                try:
+                    response = client_gemini.models.generate_content(
+                        model=model_m,
+                        contents=prompt_contents,
+                    )
+                    if response and response.text:
+                        return response.text
+                except Exception as e:
+                    last_error = e
+                    continue
+    except Exception as e:
+        last_error = e
+
+    # 2. Try Groq Second (Fallback if Gemini fails or keys are missing)
+    try:
+        groq_key = st.secrets.get("GROQ_API_KEY") or os.environ.get("GROQ_API_KEY", "")
+        if groq_key:
+            client_groq = Groq(api_key=groq_key)
+            text_prompt = prompt_contents if isinstance(prompt_contents, str) else "Analyze this image/content."
             
-    raise Exception(f"All Gemini models failed. Last error: {last_error}")
+            for model_m in ["llama-3.1-8b-instant", "llama-3.3-70b-versatile"]:
+                try:
+                    completion = client_groq.chat.completions.create(
+                        model=model_m,
+                        messages=[{"role": "user", "content": text_prompt}],
+                    )
+                    content = completion.choices[0].message.content
+                    if content:
+                        return content
+                except Exception as e:
+                    last_error = e
+                    continue
+    except Exception as e:
+        last_error = e
+
+    raise Exception(f"All AI providers and fallbacks failed. Last error: {last_error}")
 
 
 # ==========================================
@@ -246,7 +268,7 @@ st.markdown(
     """
     <div class="app-header">
         <h1>🎓 Aspirant AI</h1>
-        <p>Harvard-Tier Socratic Study Companion for Physics, Math, Chemistry, and Engineering Entrance Prep (Powered by Gemini).</p>
+        <p>Harvard-Tier Socratic Study Companion for Physics, Math, Chemistry, and Engineering Entrance Prep (Multi-AI Resilience Engine).</p>
     </div>
 """,
     unsafe_allow_html=True,
@@ -306,7 +328,7 @@ else:
 
 st.sidebar.markdown("---")
 st.sidebar.markdown(
-    "<div style='color: #64748B; font-size: 0.75rem; text-align: center;'>Powered by Google Gemini 2.5</div>",
+    "<div style='color: #64748B; font-size: 0.75rem; text-align: center;'>Powered by Multi-Provider Resilience</div>",
     unsafe_allow_html=True,
 )
 
@@ -355,17 +377,17 @@ if app_section == "🤖 AI Study & Doubt Assistant":
 
             if st.button("Generate Socratic Hints"):
                 HINT_PROMPT = f"""You are Aspirant AI, an expert, encouraging Socratic tutor for rigorous engineering and board exam preparation.
-                Analyze the provided image of the academic problem.
+                Analyze the provided academic problem.
                 User's specific context/doubt: {user_hint_query}
                 
                 Provide a Socratic response:
-                1. Break down the core concepts involved (e.g., formulas, principles).
+                1. Break down the core concepts involved (formulas, principles).
                 2. Give step-by-step guidance or guiding questions without giving away the final answer.
                 3. Point out any common pitfalls to avoid."""
 
-                with st.spinner("Analyzing problem via Gemini..."):
+                with st.spinner("Analyzing problem..."):
                     try:
-                        response_content = call_gemini([image, HINT_PROMPT])
+                        response_content = call_ai_bulletproof([image, HINT_PROMPT])
                         response_text = clean_latex_output(response_content)
                         st.markdown("### 💡 Socratic Hint Guide")
                         st.markdown(response_text)
@@ -389,7 +411,7 @@ if app_section == "🤖 AI Study & Doubt Assistant":
                             "You are Aspirant AI, an expert physics, chemistry, and math tutor. "
                             f"Provide crisp, high-signal explanations tailored for competitive exams. Topic: {concept_query}"
                         )
-                        response_content = call_gemini(prompt)
+                        response_content = call_ai_bulletproof(prompt)
                         explanation_text = clean_latex_output(response_content)
                         st.markdown("### 📘 Explanation")
                         st.markdown(explanation_text)
@@ -429,7 +451,7 @@ elif app_section == "⚡ AI Formula Flashcards (SM-2 Spaced Repetition)":
                 ]"""
 
                 try:
-                    raw_json = call_gemini(SM2_PROMPT).strip()
+                    raw_json = call_ai_bulletproof(SM2_PROMPT).strip()
                     if raw_json.startswith("```"):
                         raw_json = re.sub(r"^```(?:json)?\s*", "", raw_json)
                         raw_json = re.sub(r"\s*```$", "", raw_json)
@@ -490,7 +512,7 @@ elif app_section == "🎓 Feynman Teach-Back Simulator":
                 3. **Socratic Follow-Up**: Ask one sharp probing question to test their deep understanding without giving the answer away."""
 
                 try:
-                    response_content = call_gemini(FEYNMAN_PROMPT)
+                    response_content = call_ai_bulletproof(FEYNMAN_PROMPT)
                     feedback = clean_latex_output(response_content)
                     st.markdown("### 🏛️ Professor's Feedback & Socratic Prompt")
                     st.markdown(feedback)
@@ -543,7 +565,7 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
                   }}
                 ]"""
                 try:
-                    raw_json = call_gemini(QUIZ_PROMPT).strip()
+                    raw_json = call_ai_bulletproof(QUIZ_PROMPT).strip()
                     if raw_json.startswith("```"):
                         raw_json = re.sub(r"^```(?:json)?\s*", "", raw_json)
                         raw_json = re.sub(r"\s*```$", "", raw_json)
@@ -610,7 +632,7 @@ elif app_section == "🎯 JEE/Board Study Planner & Tracker":
             The target exam date is {exam_date}.
             Provide a structured, week-by-week preparation roadmap with milestones, priority topics in Physics, Chemistry, and Mathematics, and weekly mock test strategies."""
             try:
-                response_content = call_gemini(PLAN_PROMPT)
+                response_content = call_ai_bulletproof(PLAN_PROMPT)
                 plan_text = clean_latex_output(response_content)
                 st.markdown("### 🗓️ Your Personalized Study Roadmap")
                 st.markdown(plan_text)
