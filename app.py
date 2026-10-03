@@ -405,16 +405,22 @@ elif app_section == "⚡ AI Formula Flashcards (SM-2 Spaced Repetition)":
                 SM2_PROMPT = (
                     f"You are Aspirant AI, an expert coach utilizing SuperMemo SM-2 principles. "
                     f"Create 4 high-yield flashcards for {fc_class} {fc_subject} on '{fc_topic}'. "
-                    'Return ONLY valid raw JSON array of objects with keys: "card_id", "front_question", "back_answer". '
-                    'Example format: [{"card_id": 1, "front_question": "...", "back_answer": "..."}]'
+                    "Return ONLY a valid JSON array of objects with keys: \"card_id\", \"front_question\", \"back_answer\". "
+                    "Do NOT include any markdown code blocks, intro text, or explanation. Output raw JSON ONLY."
                 )
 
                 try:
-                    raw_json = call_ai_bulletproof(SM2_PROMPT).strip()
-                    if raw_json.startswith("```"):
-                        raw_json = re.sub(r"^```(?:json)?\s*", "", raw_json)
-                        raw_json = re.sub(r"\s*```$", "", raw_json)
-                    st.session_state.sm2_flashcards = json.loads(raw_json)
+                    raw_response = call_ai_bulletproof(SM2_PROMPT).strip()
+                    
+                    # Robust cleaning: Extract JSON array using regex if extra text is present
+                    json_match = re.search(r'\[\s*\{.*?\}\s*\]', raw_response, re.DOTALL)
+                    if json_match:
+                        clean_json = json_match.group(0)
+                    else:
+                        clean_json = re.sub(r"^```(?:json)?\s*", "", raw_response)
+                        clean_json = re.sub(r"\s*```$", "", clean_json).strip()
+
+                    st.session_state.sm2_flashcards = json.loads(clean_json)
                     st.rerun()
                 except Exception as e:
                     st.error(f"Failed to generate cards: {e}")
@@ -511,15 +517,21 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
                 QUIZ_PROMPT = (
                     f"You are Aspirant AI, an expert exam creator for {quiz_class} {quiz_subject}. "
                     f"Create 3 multiple-choice questions on '{quiz_topic}' at '{quiz_difficulty}' level. "
-                    'Return ONLY valid raw JSON array of objects with keys: "question_id", "question_text", "options" (array of 4 strings), "correct_answer", "explanation". '
-                    'Example format: [{"question_id": 1, "question_text": "...", "options": ["A) ...", "B) ...", "C) ...", "D) ..."], "correct_answer": "...", "explanation": "..."}]'
+                    "Return ONLY a valid JSON array of objects with keys: \"question_id\", \"question_text\", \"options\" (array of 4 strings), \"correct_answer\", \"explanation\". "
+                    "Do NOT include any markdown code blocks, intro text, or explanation. Output raw JSON ONLY."
                 )
                 try:
-                    raw_json = call_ai_bulletproof(QUIZ_PROMPT).strip()
-                    if raw_json.startswith("```"):
-                        raw_json = re.sub(r"^```(?:json)?\s*", "", raw_json)
-                        raw_json = re.sub(r"\s*```$", "", raw_json)
-                    st.session_state.quiz_data = json.loads(raw_json)
+                    raw_response = call_ai_bulletproof(QUIZ_PROMPT).strip()
+                    
+                    # Robust cleaning for quiz JSON
+                    json_match = re.search(r'\[\s*\{.*?\}\s*\]', raw_response, re.DOTALL)
+                    if json_match:
+                        clean_json = json_match.group(0)
+                    else:
+                        clean_json = re.sub(r"^```(?:json)?\s*", "", raw_response)
+                        clean_json = re.sub(r"\s*```$", "", clean_json).strip()
+
+                    st.session_state.quiz_data = json.loads(clean_json)
                     st.session_state.user_answers = {}
                     st.session_state.quiz_submitted = False
                     st.rerun()
