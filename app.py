@@ -115,13 +115,13 @@ def clean_latex_output(text):
 # ==========================================
 def call_ai_bulletproof(prompt_contents):
     """
-    Tries Groq first for ultra-fast generation.
-    If Groq hits rate limits or network issues, it instantly falls back to OpenRouter.
+    Tries Groq first for ultra-fast generation with max tokens set for completeness.
+    Falls back to OpenRouter if needed.
     """
     last_error = None
     text_prompt = prompt_contents if isinstance(prompt_contents, str) else "Analyze this content."
 
-    # 1. Try Groq First (Lightning Fast)
+    # 1. Try Groq First (Lightning Fast Hardware Acceleration)
     try:
         groq_key = st.secrets.get("GROQ_API_KEY") or os.environ.get("GROQ_API_KEY", "")
         if groq_key:
@@ -131,6 +131,8 @@ def call_ai_bulletproof(prompt_contents):
                     completion = client_groq.chat.completions.create(
                         model=model_m,
                         messages=[{"role": "user", "content": text_prompt}],
+                        max_tokens=4096,  # Increased token limit to prevent incomplete answers
+                        temperature=0.3
                     )
                     content = completion.choices[0].message.content
                     if content:
@@ -141,7 +143,7 @@ def call_ai_bulletproof(prompt_contents):
     except Exception as e:
         last_error = e
 
-    # 2. Try OpenRouter Second (Updated with valid free/standard model strings)
+    # 2. Try OpenRouter Second
     try:
         or_key = st.secrets.get("OPENROUTER_API_KEY") or os.environ.get("OPENROUTER_API_KEY", "")
         if or_key:
@@ -152,17 +154,19 @@ def call_ai_bulletproof(prompt_contents):
                 "X-Title": "Aspirant AI"
             }
             models_to_try = [
-                "google/gemini-flash-1.5",
                 "meta-llama/llama-3.1-8b-instruct",
+                "google/gemini-flash-1.5",
                 "meta-llama/llama-3.3-70b-instruct"
             ]
             for model_name in models_to_try:
                 try:
                     payload = {
                         "model": model_name,
-                        "messages": [{"role": "user", "content": text_prompt}]
+                        "messages": [{"role": "user", "content": text_prompt}],
+                        "max_tokens": 4096,
+                        "temperature": 0.3
                     }
-                    resp = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload, timeout=20)
+                    resp = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload, timeout=25)
                     if resp.status_code == 200:
                         data = resp.json()
                         content = data["choices"][0]["message"]["content"]
@@ -282,7 +286,7 @@ st.markdown(
     """
     <div class="app-header">
         <h1>🎓 Aspirant AI</h1>
-        <p>Harvard-Tier Socratic Study Companion for Physics, Math, Chemistry, and Engineering Entrance Prep (Groq + OpenRouter Resilience Engine).</p>
+        <p>Harvard-Tier Socratic Study Companion for Physics, Math, Chemistry, and Engineering Entrance Prep (Max-Token & Speed Optimized).</p>
     </div>
 """,
     unsafe_allow_html=True,
@@ -360,11 +364,11 @@ if app_section == "🤖 AI Study & Doubt Assistant":
 
     if st.button("Explain Concept"):
         if concept_query:
-            with st.spinner("Drafting explanation via Groq..."):
+            with st.spinner("Drafting comprehensive explanation via Groq..."):
                 try:
                     prompt = (
                         "You are Aspirant AI, an expert physics, chemistry, and math tutor. "
-                        f"Provide crisp, high-signal explanations tailored for competitive exams. Topic: {concept_query}"
+                        f"Provide crisp, high-signal, fully detailed explanations tailored for competitive exams. Topic: {concept_query}"
                     )
                     response_content = call_ai_bulletproof(prompt)
                     explanation_text = clean_latex_output(response_content)
@@ -573,7 +577,7 @@ elif app_section == "🎯 JEE/Board Study Planner & Tracker":
     exam_date = st.date_input("Target Exam Date", value=date.today() + timedelta(days=120))
 
     if st.button("Generate Custom Study Schedule"):
-        with st.spinner("Crafting customized preparation roadmap..."):
+        with st.spinner("Crafting comprehensive preparation roadmap..."):
             PLAN_PROMPT = (
                 f"You are an elite study strategist for {plan_class} students preparing for {target_exam} aiming for top-tier results. "
                 f"The target exam date is {exam_date}. "
