@@ -911,7 +911,9 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
                       "role": "system",
                       "content": (
                           "You are a JSON-only API that outputs valid JSON"
-                          " array of questions."
+                          " array of questions. Ensure all strings use proper"
+                          " escaping and avoid unescaped double quotes inside"
+                          " string values."
                       ),
                   },
                   {"role": "user", "content": QUIZ_PROMPT},
@@ -923,15 +925,31 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
             raw_content = re.sub(r"^```(?:json)?\s*", "", raw_content)
             raw_content = re.sub(r"\s*```$", "", raw_content)
 
-          # Bulletproof fix: escape single backslashes not already part of valid JSON escapes
-          fixed_content = re.sub(r'(?<!\\)\\(?!["\\/bfnrtu])', r'\\\\', raw_content)
+          # Robust multi-stage parser to handle LLM formatting quirks
+          parsed_data = None
+          try:
+            fixed_content = re.sub(
+                r'(?<!\\)\\(?!["\\/bfnrtu])', r"\\\\", raw_content
+            )
+            parsed_data = json.loads(fixed_content)
+          except Exception:
+            # Fallback parser using ast.literal_eval for resilient handling of quotes/newlines
+            py_ready = (
+                raw_content.replace("true", "True")
+                .replace("false", "False")
+                .replace("null", "None")
+            )
+            parsed_data = ast.literal_eval(py_ready)
 
-          st.session_state.quiz_data = json.loads(fixed_content)
+          st.session_state.quiz_data = parsed_data
           st.session_state.user_answers = {}
           st.session_state.quiz_submitted = False
           st.rerun()
         except Exception as e:
-          st.error(f"Failed to generate quiz JSON: {e}")
+          st.error(
+              f"Failed to generate and parse quiz data: {e}\n\nRaw output"
+              f" received:\n{raw_content}"
+          )
     else:
       st.warning("Please enter a chapter or topic for the quiz.")
 
