@@ -613,7 +613,7 @@ if app_section == "🤖 AI Study & Doubt Assistant":
                         ],
                     }
                 ],
-                max_completion_tokens=2000,
+                max_completion_tokens=8000,
             )
             response_text = clean_latex_output(
                 chat_completion.choices[0].message.content
@@ -655,7 +655,7 @@ if app_section == "🤖 AI Study & Doubt Assistant":
                     },
                     {"role": "user", "content": concept_query},
                 ],
-                max_completion_tokens=2500,
+                max_completion_tokens=8000,
             )
             explanation_text = clean_latex_output(
                 chat_completion.choices[0].message.content
@@ -712,7 +712,7 @@ elif app_section == "⚡ AI Formula Flashcards (SM-2 Spaced Repetition)":
                   {"role": "system", "content": "Return valid JSON array only."},
                   {"role": "user", "content": SM2_PROMPT},
               ],
-              max_completion_tokens=2000,
+              max_completion_tokens=8000,
           )
           raw_json = chat_completion.choices[0].message.content.strip()
           if raw_json.startswith("```"):
@@ -804,7 +804,7 @@ elif app_section == "🎓 Feynman Teach-Back Simulator":
 
   if st.button("Evaluate My Teach-Back"):
     if feynman_concept and feynman_explanation:
-      with st.spinner("Harvard Professor evaluating your conceptual clarity..."):
+      with st.spinner("evaluating your conceptual clarity..."):
         FEYNMAN_PROMPT = f"""You are a rigorous Harvard physics/math professor utilizing the Feynman technique.
         The student is trying to explain the concept of '{feynman_concept}'.
         Here is their explanation: '{feynman_explanation}'
@@ -826,7 +826,7 @@ elif app_section == "🎓 Feynman Teach-Back Simulator":
                   },
                   {"role": "user", "content": FEYNMAN_PROMPT},
               ],
-              max_completion_tokens=2000,
+              max_completion_tokens=8000,
           )
           feedback = clean_latex_output(
               chat_completion.choices[0].message.content
@@ -920,7 +920,7 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
                   },
                   {"role": "user", "content": QUIZ_PROMPT},
               ],
-              max_completion_tokens=3000,
+              max_completion_tokens=8000,
           )
           raw_content = chat_completion.choices[0].message.content.strip()
           if raw_content.startswith("```"):
@@ -1076,7 +1076,7 @@ elif app_section == "🎙️ Voice-Assisted Doubt Solver":
                   },
                   {"role": "user", "content": SOLVER_PROMPT},
               ],
-              max_completion_tokens=2500,
+              max_completion_tokens=8000,
           )
           solution_text = clean_latex_output(
               chat_completion.choices[0].message.content
@@ -1141,7 +1141,7 @@ elif app_section == "🎯 JEE/Board Study Planner & Tracker":
                   },
                   {"role": "user", "content": PLANNER_PROMPT},
               ],
-              max_completion_tokens=2500,
+              max_completion_tokens=8000,
           )
           st.session_state.study_plan_data = clean_latex_output(
               chat_completion.choices[0].message.content
