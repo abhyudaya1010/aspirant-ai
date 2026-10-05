@@ -910,8 +910,8 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
                   {
                       "role": "system",
                       "content": (
-                          "You are a JSON-only API that outputs valid JSON array"
-                          " of questions."
+                          "You are a JSON-only API that outputs valid JSON"
+                          " array of questions."
                       ),
                   },
                   {"role": "user", "content": QUIZ_PROMPT},
@@ -923,10 +923,8 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
             raw_content = re.sub(r"^```(?:json)?\s*", "", raw_content)
             raw_content = re.sub(r"\s*```$", "", raw_content)
 
-          # Fix unescaped backslashes in LaTeX strings
-          fixed_content = re.sub(
-              r"\\(?![" + r'\\"/bfnrtu' + r"])", r"\\\\", raw_content
-          )
+          # Fix unescaped backslashes in LaTeX strings safely
+          fixed_content = re.sub(r"\\([a-zA-Z]+)", r"\\\\\\1", raw_content)
 
           st.session_state.quiz_data = json.loads(fixed_content)
           st.session_state.user_answers = {}
