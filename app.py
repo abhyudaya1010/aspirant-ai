@@ -892,14 +892,17 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
         QUIZ_PROMPT = f"""You are Aspirant AI, an expert engineering entrance exam test creator.
         Generate a 5-question multiple-choice practice quiz for {quiz_class} {quiz_subject} on the topic: '{quiz_topic}' at '{quiz_difficulty}' level.
         
-        Format your output as valid JSON matching this exact structure, with no markdown code blocks outside or extra text:
+        CRITICAL FORMATTING RULES:
+        1. Wrap ALL mathematical expressions and variables in standard single dollar signs (e.g., $R$, $\\sigma$, $\\frac{{\\sigma}}{{\\varepsilon_0}}$). Do NOT use parentheses like (\\frac{{...}}{{...}}).
+        2. Ensure clean question text without repeating characters or variables.
+        3. Format your output strictly as valid JSON matching this exact structure, with no markdown code blocks outside or extra text:
         [
           {{
             "question_number": 1,
-            "question": "Question text here with LaTeX if needed",
-            "options": ["A) ...", "B) ...", "C) ...", "D) ..."],
+            "question": "Question text here using $...$ for math",
+            "options": ["A) $\\frac{{\\sigma}}{{\\varepsilon_0}}$", "B) $\\frac{{\\sigma}}{{2\\varepsilon_0}}$", "C) $\\frac{{\\sigma R}}{{\\varepsilon_0}}$", "D) Zero"],
             "correct_answer": "A",
-            "explanation": "Detailed step-by-step solution here"
+            "explanation": "Detailed step-by-step solution here using $...$ for math"
           }}
         ]"""
 
@@ -911,9 +914,8 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
                       "role": "system",
                       "content": (
                           "You are a JSON-only API that outputs valid JSON"
-                          " array of questions. Ensure all strings use proper"
-                          " escaping and avoid unescaped double quotes inside"
-                          " string values."
+                          " array of questions. Always use $...$ for LaTeX"
+                          " math expressions inside strings."
                       ),
                   },
                   {"role": "user", "content": QUIZ_PROMPT},
@@ -925,7 +927,7 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
             raw_content = re.sub(r"^```(?:json)?\s*", "", raw_content)
             raw_content = re.sub(r"\s*```$", "", raw_content)
 
-          # Robust multi-stage parser to handle LLM formatting quirks
+          # Robust multi-stage parser
           parsed_data = None
           try:
             fixed_content = re.sub(
@@ -933,7 +935,6 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
             )
             parsed_data = json.loads(fixed_content)
           except Exception:
-            # Fallback parser using ast.literal_eval for resilient handling of quotes/newlines
             py_ready = (
                 raw_content.replace("true", "True")
                 .replace("false", "False")
@@ -1013,7 +1014,6 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
         label="Final Score",
         value=f"{score} / {total} ({int((score/total)*100)}%)",
     )
-
 # ==========================================
 # SECTION 5: VOICE-ASSISTED DOUBT SOLVER
 # ==========================================
