@@ -923,8 +923,8 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
             raw_content = re.sub(r"^```(?:json)?\s*", "", raw_content)
             raw_content = re.sub(r"\s*```$", "", raw_content)
 
-          # Fix unescaped backslashes in LaTeX strings safely
-          fixed_content = re.sub(r"\\([a-zA-Z]+)", r"\\\\\\1", raw_content)
+          # Bulletproof fix: escape single backslashes not already part of valid JSON escapes
+          fixed_content = re.sub(r'(?<!\\)\\(?!["\\/bfnrtu])', r'\\\\', raw_content)
 
           st.session_state.quiz_data = json.loads(fixed_content)
           st.session_state.user_answers = {}
