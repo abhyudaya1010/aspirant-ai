@@ -840,7 +840,7 @@ elif app_section == "🎓 Feynman Teach-Back Simulator":
           "Please provide both a concept and your verbal or written"
           " explanation."
       )
-        # ==========================================
+# ==========================================
 # SECTION 4: INTERACTIVE MOCK TEST & QUIZ GENERATOR
 # ==========================================
 elif app_section == "📝 Interactive Mock Test & Quiz Generator":
