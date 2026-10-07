@@ -496,6 +496,7 @@ if nav_category == "🧠 Core AI Tutoring":
       [
           "🤖 AI Study & Doubt Assistant",
           "🎙️ Voice-Assisted Doubt Solver",
+          "🎓 Common App Essay & Extracurricular Optimizer",
       ],
       label_visibility="collapsed",
   )
