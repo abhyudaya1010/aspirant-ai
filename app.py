@@ -889,7 +889,7 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
   if st.button("Generate Practice Quiz"):
     if quiz_topic:
       with st.spinner("Generating custom mock test questions..."):
-        QUIZ_PROMPT = f"""You are Aspirant AI, an expert engineering entrance exam test creator.
+        QUIZ_PROMPT = """You are Aspirant AI, an expert engineering entrance exam test creator.
         Generate a 5-question multiple-choice practice quiz for {quiz_class} {quiz_subject} on the topic: '{quiz_topic}' at '{quiz_difficulty}' level.
         
         CRITICAL FORMATTING RULES:
@@ -900,11 +900,16 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
           {{
             "question_number": 1,
             "question": "Question text here using $...$ for math",
-            "options": ["A) $\\frac{{\\sigma}}{{\\varepsilon_0}}$", "B) $\\frac{{\\sigma}}{2\\varepsilon_0}$", "C) $\\frac{{\\sigma R}}{{\\varepsilon_0}}$", "D) Zero"],
+            "options": ["A) $\\frac{{\\sigma}}{{\\varepsilon_0}}$", "B) $\\frac{{\\sigma}}{{2\\varepsilon_0}}$", "C) $\\frac{{\\sigma R}}{{\\varepsilon_0}}$", "D) Zero"],
             "correct_answer": "A",
             "explanation": "Detailed step-by-step solution here using $...$ for math"
           }}
-        ]"""
+        ]""".format(
+            quiz_class=quiz_class,
+            quiz_subject=quiz_subject,
+            quiz_topic=quiz_topic,
+            quiz_difficulty=quiz_difficulty,
+        )
 
         try:
           chat_completion = client.chat.completions.create(
@@ -1009,7 +1014,6 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
       st.markdown(f"**Explanation:** {clean_latex_output(q['explanation'])}")
       st.markdown("---")
 
-    # --- CHANGED: Automatically log attempt into analytics history ---
     if "quiz_history" not in st.session_state:
       st.session_state.quiz_history = []
 
