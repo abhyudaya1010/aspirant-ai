@@ -899,7 +899,7 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
         - If JEE Main (Moderate): Include standard high-yield numerical application, statement-based questions, or tricky algebraic/conceptual twists typical of recent NTA papers.
         
         CRITICAL FORMATTING RULES:
-        1. Wrap ALL mathematical expressions and variables in standard single dollar signs (e.g., $R$, $\\sigma$, $\\int_{0}^{R} ...$). Do NOT use parentheses like (\\frac{{...}}{{...}}).
+        1. Wrap ALL mathematical expressions and variables in standard single dollar signs (e.g., $R$, $\\sigma$, $\\int_{{0}}^{{R}} ...$). Do NOT use parentheses like (\\frac{{...}}{{...}}).
         2. Ensure clean question text without repeating characters or variables.
         3. Format your output strictly as valid JSON matching this exact structure, with no markdown code blocks outside or extra text:
         [
