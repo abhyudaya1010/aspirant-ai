@@ -846,8 +846,8 @@ elif app_section == "🎓 Feynman Teach-Back Simulator":
 elif app_section == "📝 Interactive Mock Test & Quiz Generator":
   st.subheader("📝 Interactive Mock Test & Quiz Generator")
   st.markdown(
-      "Test your mastery with customized multiple-choice practice tests"
-      " tailored for JEE Main and board exam levels."
+      "Test your mastery with rigorous, elite-tier multiple-choice practice"
+      " tests tailored for JEE Main and Advanced levels."
   )
 
   col_t1, col_t2, col_t3 = st.columns(3, gap="medium")
@@ -888,21 +888,27 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
 
   if st.button("Generate Practice Quiz"):
     if quiz_topic:
-      with st.spinner("Generating custom mock test questions..."):
-        QUIZ_PROMPT = """You are Aspirant AI, an expert engineering entrance exam test creator.
-        Generate a 5-question multiple-choice practice quiz for {quiz_class} {quiz_subject} on the topic: '{quiz_topic}' at '{quiz_difficulty}' level.
+      with st.spinner(
+          "Generating elite JEE-level practice questions and solutions..."
+      ):
+        QUIZ_PROMPT = """You are Aspirant AI, an elite IIT-JEE question paper setter (former IIT Professor). 
+        Generate a rigorous 5-question multiple-choice practice quiz for {quiz_class} {quiz_subject} on the topic: '{quiz_topic}' at '{quiz_difficulty}' level.
+        
+        DIFFICULTY GUIDELINES:
+        - If JEE Advanced (Hard): Include multi-concept integration, non-trivial boundary conditions, calculus-heavy derivations, or trick options designed to catch common conceptual errors. Avoid trivial direct formula substitution.
+        - If JEE Main (Moderate): Include standard high-yield numerical application, statement-based questions, or tricky algebraic/conceptual twists typical of recent NTA papers.
         
         CRITICAL FORMATTING RULES:
-        1. Wrap ALL mathematical expressions and variables in standard single dollar signs (e.g., $R$, $\\sigma$, $\\frac{{\\sigma}}{{\\varepsilon_0}}$). Do NOT use parentheses like (\\frac{{...}}{{...}}).
+        1. Wrap ALL mathematical expressions and variables in standard single dollar signs (e.g., $R$, $\\sigma$, $\\int_{0}^{R} ...$). Do NOT use parentheses like (\\frac{{...}}{{...}}).
         2. Ensure clean question text without repeating characters or variables.
         3. Format your output strictly as valid JSON matching this exact structure, with no markdown code blocks outside or extra text:
         [
           {{
             "question_number": 1,
-            "question": "Question text here using $...$ for math",
-            "options": ["A) $\\frac{{\\sigma}}{{\\varepsilon_0}}$", "B) $\\frac{{\\sigma}}{{2\\varepsilon_0}}$", "C) $\\frac{{\\sigma R}}{{\\varepsilon_0}}$", "D) Zero"],
+            "question": "Advanced question text here using $...$ for math",
+            "options": ["A) ...", "B) ...", "C) ...", "D) ..."],
             "correct_answer": "A",
-            "explanation": "Detailed step-by-step solution here using $...$ for math"
+            "explanation": "Rigorous, step-by-step advanced derivation and solution here using $...$ for math"
           }}
         ]""".format(
             quiz_class=quiz_class,
