@@ -1345,3 +1345,93 @@ elif app_section == "📊 AI Performance Analytics & Weakness Diagnostic":
       st.markdown("---")
       st.markdown("### 📋 Your Personalized Diagnostic Report")
       st.markdown(st.session_state.diagnostic_report)
+# ==========================================
+# SECTION 10: COMMON APP ESSAY & EXTRACURRICULAR OPTIMIZER
+# ==========================================
+elif app_section == "🎓 Common App Essay & Extracurricular Optimizer":
+  st.subheader("🎓 Common App Essay & Extracurricular Optimizer")
+  st.markdown(
+      "Polish your university application assets! Paste your Common App essay,"
+      " personal statement, or 150-word extracurricular description to get"
+      " rigorous feedback from an admissions perspective."
+  )
+
+  app_mode = st.selectbox(
+      "Select Asset Type",
+      [
+          "Common App Main Essay (Personal Statement)",
+          "Extracurricular Activity Description (150 words)",
+          "Why Us / Supplemental Essay",
+      ],
+      key="app_mode",
+  )
+
+  target_major = st.text_input(
+      "Target Major / Field of Study",
+      value="Computer Science & Artificial Intelligence",
+      key="app_major",
+  )
+
+  asset_text = st.text_area(
+      "Paste your text here...",
+      placeholder=(
+          "Paste your draft here and let the admissions critic evaluate your"
+          " hook, impact metrics, and voice..."
+      ),
+      height=220,
+  )
+
+  if "admission_feedback" not in st.session_state:
+    st.session_state.admission_feedback = None
+
+  if st.button("Evaluate Application Asset"):
+    if asset_text:
+      with st.spinner("Analyzing narrative arc, tone, and impact score..."):
+        ADMISSION_PROMPT = """You are an elite former admissions officer at a top-tier U.S. university (such as MIT, Stanford, or Ivy League institutions) specializing in Computer Science and STEM admissions.
+        
+        Evaluate the following student submission for a {app_mode} targeting {target_major}:
+        
+        "{asset_text}"
+        
+        Provide a structured critique containing:
+        1. **Admissions Impact Rating (Out of 10)**: Based on hook, depth of reflection, and differentiation.
+        2. **What Works Well**: Strong narrative elements, unique perspectives, or technical depth.
+        3. **Critical Vulnerabilities & Weaknesses**: Clichés to remove, passive phrasing, missing impact metrics, or lack of intellectual vitality.
+        4. **Line-by-Line Polish Suggestions**: Specific recommendations to elevate the vocabulary and punchiness.
+        
+        Format your response cleanly with professional Markdown headers and bullet points."""
+
+        formatted_prompt = ADMISSION_PROMPT.format(
+            app_mode=app_mode,
+            target_major=target_major,
+            asset_text=asset_text,
+        )
+
+        try:
+          chat_completion = client.chat.completions.create(
+              model="openai/gpt-oss-120b",
+              messages=[
+                  {
+                      "role": "system",
+                      "content": (
+                          "You are an expert admissions strategist and essay"
+                          " coach."
+                      ),
+                  },
+                  {"role": "user", "content": formatted_prompt},
+              ],
+              max_completion_tokens=4000,
+          )
+          st.session_state.admission_feedback = clean_latex_output(
+              chat_completion.choices[0].message.content
+          )
+          st.rerun()
+        except Exception as e:
+          st.error(f"Failed to evaluate application asset: {e}")
+    else:
+      st.warning("Please paste your text before running the evaluation.")
+
+  if st.session_state.admission_feedback:
+    st.markdown("---")
+    st.markdown("### 🏛️ Admissions Review & Feedback")
+    st.markdown(st.session_state.admission_feedback)
