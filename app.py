@@ -840,7 +840,7 @@ elif app_section == "🎓 Feynman Teach-Back Simulator":
           "Please provide both a concept and your verbal or written"
           " explanation."
       )
-# ==========================================
+        # ==========================================
 # SECTION 4: INTERACTIVE MOCK TEST & QUIZ GENERATOR
 # ==========================================
 elif app_section == "📝 Interactive Mock Test & Quiz Generator":
@@ -900,7 +900,7 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
           {{
             "question_number": 1,
             "question": "Question text here using $...$ for math",
-            "options": ["A) $\\frac{{\\sigma}}{{\\varepsilon_0}}$", "B) $\\frac{{\\sigma}}{{2\\varepsilon_0}}$", "C) $\\frac{{\\sigma R}}{{\\varepsilon_0}}$", "D) Zero"],
+            "options": ["A) $\\frac{{\\sigma}}{{\\varepsilon_0}}$", "B) $\\frac{{\\sigma}}{2\\varepsilon_0}$", "C) $\\frac{{\\sigma R}}{{\\varepsilon_0}}$", "D) Zero"],
             "correct_answer": "A",
             "explanation": "Detailed step-by-step solution here using $...$ for math"
           }}
@@ -927,7 +927,6 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
             raw_content = re.sub(r"^```(?:json)?\s*", "", raw_content)
             raw_content = re.sub(r"\s*```$", "", raw_content)
 
-          # Robust multi-stage parser
           parsed_data = None
           try:
             fixed_content = re.sub(
@@ -1009,6 +1008,23 @@ elif app_section == "📝 Interactive Mock Test & Quiz Generator":
       st.markdown(f"**Correct Answer Option:** `{q['correct_answer']}`")
       st.markdown(f"**Explanation:** {clean_latex_output(q['explanation'])}")
       st.markdown("---")
+
+    # --- CHANGED: Automatically log attempt into analytics history ---
+    if "quiz_history" not in st.session_state:
+      st.session_state.quiz_history = []
+
+    quiz_identifier = f"{quiz_topic}_{score}_{total}"
+    if not any(
+        h.get("identifier") == quiz_identifier
+        for h in st.session_state.quiz_history
+    ):
+      st.session_state.quiz_history.append({
+          "identifier": quiz_identifier,
+          "topic": quiz_topic,
+          "subject": quiz_subject,
+          "score": score,
+          "total": total,
+      })
 
     st.metric(
         label="Final Score",
@@ -1210,3 +1226,112 @@ elif app_section == "📚 NCERT Textbook Library":
     with col_ch2:
       st.markdown(f"[📥 Download PDF]({ch['url']})", unsafe_allow_html=True)
     st.markdown("---")
+# ==========================================
+# SECTION 8: AI PERFORMANCE ANALYTICS & WEAKNESS DIAGNOSTIC
+# ==========================================
+elif app_section == "📊 AI Performance Analytics & Weakness Diagnostic":
+  st.subheader("📊 AI Performance Analytics & Weakness Diagnostic")
+  st.markdown(
+      "Analyze your mock test history, identify recurring weak areas, and get"
+      " AI-driven revision prescriptions."
+  )
+
+  if (
+      "quiz_history" not in st.session_state
+      or not st.session_state.quiz_history
+  ):
+    st.info(
+        "No quiz attempts recorded yet! Take a few practice quizzes in the"
+        " **Interactive Mock Test & Quiz Generator** section to unlock"
+        " performance analytics."
+    )
+  else:
+    total_tests = len(st.session_state.quiz_history)
+    total_correct = sum(item["score"] for item in st.session_state.quiz_history)
+    total_questions = sum(
+        item["total"] for item in st.session_state.quiz_history
+    )
+    overall_accuracy = (
+        (total_correct / total_questions) * 100 if total_questions > 0 else 0
+    )
+
+    col_m1, col_m2, col_m3 = st.columns(3)
+    with col_m1:
+      st.metric("Total Quizzes Taken", total_tests)
+    with col_m2:
+      st.metric("Overall Accuracy", f"{overall_accuracy:.1f}%")
+    with col_m3:
+      st.metric(
+          "Subjects Tracked",
+          len(set(item["subject"] for item in st.session_state.quiz_history)),
+      )
+
+    st.markdown("---")
+    st.markdown("### 📈 Recent Quiz Performance History")
+
+    for h in reversed(st.session_state.quiz_history):
+      col_h1, col_h2, col_h3, col_h4 = st.columns([3, 2, 2, 2])
+      with col_h1:
+        st.markdown(f"**Topic:** {h['topic']}")
+      with col_h2:
+        st.markdown(f"**Subject:** {h['subject']}")
+      with col_h3:
+        st.markdown(f"**Score:** {h['score']} / {h['total']}")
+      with col_h4:
+        pct = (h["score"] / h["total"]) * 100
+        if pct >= 80:
+          st.success(f"{pct:.0f}% — Excellent")
+        elif pct >= 50:
+          st.warning(f"{pct:.0f}% — Moderate")
+        else:
+          st.error(f"{pct:.0f}% — Needs Work")
+      st.markdown("---")
+
+    st.markdown("### 🩺 AI Weakness Diagnostic & Revision Prescription")
+    if "diagnostic_report" not in st.session_state:
+      st.session_state.diagnostic_report = None
+
+    if st.button("Generate AI Diagnostic Report"):
+      with st.spinner(
+          "Analyzing your quiz history and identifying knowledge gaps..."
+      ):
+        history_summary = "\n".join([
+            f"- Subject: {h['subject']}, Topic: {h['topic']}, Score:"
+            f" {h['score']}/{h['total']}"
+            for h in st.session_state.quiz_history
+        ])
+
+        DIAGNOSTIC_PROMPT = f"""You are Aspirant AI, an expert exam strategist and analytical coach. 
+        Based on the student's quiz attempt history below, analyze their weak areas, identify recurring mistakes or conceptual gaps, and provide a targeted 3-step revision prescription with high-yield focus topics.
+        
+        Quiz History:
+        {history_summary}
+        
+        Provide a structured, encouraging diagnostic report with actionable recommendations."""
+
+        try:
+          chat_completion = client.chat.completions.create(
+              model="openai/gpt-oss-120b",
+              messages=[
+                  {
+                      "role": "system",
+                      "content": (
+                          "You are Aspirant AI, an expert analytical study"
+                          " coach."
+                      ),
+                  },
+                  {"role": "user", "content": DIAGNOSTIC_PROMPT},
+              ],
+              max_completion_tokens=4000,
+          )
+          st.session_state.diagnostic_report = clean_latex_output(
+              chat_completion.choices[0].message.content
+          )
+          st.rerun()
+        except Exception as e:
+          st.error(f"Failed to generate diagnostic report: {e}")
+
+    if st.session_state.diagnostic_report:
+      st.markdown("---")
+      st.markdown("### 📋 Your Personalized Diagnostic Report")
+      st.markdown(st.session_state.diagnostic_report)
