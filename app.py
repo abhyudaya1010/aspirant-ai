@@ -1353,15 +1353,15 @@ elif app_section == "🎓 Common App Essay & Extracurricular Optimizer":
   st.subheader("🎓 Common App Essay & Extracurricular Optimizer")
   st.markdown(
       "Polish your university application assets! Paste your Common App essay,"
-      " personal statement, or 150-word extracurricular description to get"
+      " personal statement, or 150-character extracurricular description to get"
       " rigorous feedback from an admissions perspective."
   )
 
   app_mode = st.selectbox(
       "Select Asset Type",
       [
+          "Extracurricular Activity Description (150 characters max)",
           "Common App Main Essay (Personal Statement)",
-          "Extracurricular Activity Description (150 words)",
           "Why Us / Supplemental Essay",
       ],
       key="app_mode",
@@ -1382,6 +1382,17 @@ elif app_section == "🎓 Common App Essay & Extracurricular Optimizer":
       height=220,
   )
 
+  # Live Character Counter for Extracurriculars
+  if app_mode == "Extracurricular Activity Description (150 characters max)":
+    char_count = len(asset_text)
+    if char_count > 150:
+      st.error(
+          f"Character count: {char_count}/150 ❌ (Exceeds the 150-character"
+          " Common App limit!)"
+      )
+    else:
+      st.success(f"Character count: {char_count}/150 ✅")
+
   if "admission_feedback" not in st.session_state:
     st.session_state.admission_feedback = None
 
@@ -1398,7 +1409,7 @@ elif app_section == "🎓 Common App Essay & Extracurricular Optimizer":
         1. **Admissions Impact Rating (Out of 10)**: Based on hook, depth of reflection, and differentiation.
         2. **What Works Well**: Strong narrative elements, unique perspectives, or technical depth.
         3. **Critical Vulnerabilities & Weaknesses**: Clichés to remove, passive phrasing, missing impact metrics, or lack of intellectual vitality.
-        4. **Line-by-Line Polish Suggestions**: Specific recommendations to elevate the vocabulary and punchiness.
+        4. **Line-by-Line Polish Suggestions**: Specific recommendations to elevate the vocabulary and punchiness. (If this is an extracurricular description, ensure suggestions fit strictly within the 150-character limit using strong action verbs and metrics).
         
         Format your response cleanly with professional Markdown headers and bullet points."""
 
