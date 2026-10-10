@@ -1352,9 +1352,8 @@ elif app_section == "📊 AI Performance Analytics & Weakness Diagnostic":
 elif app_section == "🎓 Common App Essay & Extracurricular Optimizer":
   st.subheader("🎓 Common App Essay & Extracurricular Optimizer")
   st.markdown(
-      "Polish your university application assets! Paste your Common App essay,"
-      " personal statement, or 150-character extracurricular description to get"
-      " rigorous feedback from an admissions perspective."
+      "Get a brutal, unfiltered admissions critique. No sugarcoating—just"
+      " honest evaluation from a top-tier U.S. admissions perspective."
   )
 
   app_mode = st.selectbox(
@@ -1376,13 +1375,11 @@ elif app_section == "🎓 Common App Essay & Extracurricular Optimizer":
   asset_text = st.text_area(
       "Paste your text here...",
       placeholder=(
-          "Paste your draft here and let the admissions critic evaluate your"
-          " hook, impact metrics, and voice..."
+          "Paste your draft here. Prepare for rigorous, unsparing scrutiny..."
       ),
       height=220,
   )
 
-  # Live Character Counter for Extracurriculars
   if app_mode == "Extracurricular Activity Description (150 characters max)":
     char_count = len(asset_text)
     if char_count > 150:
@@ -1396,22 +1393,23 @@ elif app_section == "🎓 Common App Essay & Extracurricular Optimizer":
   if "admission_feedback" not in st.session_state:
     st.session_state.admission_feedback = None
 
-  if st.button("Evaluate Application Asset"):
+  if st.button("Run Brutal Admissions Review"):
     if asset_text:
-      with st.spinner("Analyzing narrative arc, tone, and impact score..."):
-        ADMISSION_PROMPT = """You are an elite former admissions officer at a top-tier U.S. university (such as MIT, Stanford, or Ivy League institutions) specializing in Computer Science and STEM admissions.
+      with st.spinner("Conducting strict committee-style evaluation..."):
+        ADMISSION_PROMPT = """You are a cynical, highly analytical, and uncompromising admissions director at an elite U.S. university (such as MIT, Stanford, or Ivy League institutions) evaluating a competitive applicant for {target_major}. 
         
-        Evaluate the following student submission for a {app_mode} targeting {target_major}:
+        Your job is NOT to make the student feel good. Your job is to protect the incoming class profile by identifying weak applications, common clichés, inflated descriptions, and lack of genuine intellectual vitality or spike.
         
+        Evaluate this {app_mode} with absolute honesty:
         "{asset_text}"
         
-        Provide a structured critique containing:
-        1. **Admissions Impact Rating (Out of 10)**: Based on hook, depth of reflection, and differentiation.
-        2. **What Works Well**: Strong narrative elements, unique perspectives, or technical depth.
-        3. **Critical Vulnerabilities & Weaknesses**: Clichés to remove, passive phrasing, missing impact metrics, or lack of intellectual vitality.
-        4. **Line-by-Line Polish Suggestions**: Specific recommendations to elevate the vocabulary and punchiness. (If this is an extracurricular description, ensure suggestions fit strictly within the 150-character limit using strong action verbs and metrics).
+        Provide a rigorous, unsparing critique broken down into:
+        1. **Admissions Committee Verdict (Out of 10 & Admit/Waitlist/Reject Odds)**: Be brutally honest. If it sounds generic, pretentious, or weak, score it accordingly.
+        2. **The Red Flags & Cliche Check**: Call out passive phrasing, manufactured drama, filler words, or signs of AI/over-editing.
+        3. **Where It Fails to Stand Out**: Why does this fail to create a distinct "spike" for a {target_major} applicant?
+        4. **The Rewrite / Hard Truth Fix**: Provide a rewritten, high-impact version that cuts all fluff and maximizes data/action verbs (strictly respecting character limits if evaluating an activity description).
         
-        Format your response cleanly with professional Markdown headers and bullet points."""
+        Keep the tone professional, razor-sharp, and direct."""
 
         formatted_prompt = ADMISSION_PROMPT.format(
             app_mode=app_mode,
@@ -1426,8 +1424,9 @@ elif app_section == "🎓 Common App Essay & Extracurricular Optimizer":
                   {
                       "role": "system",
                       "content": (
-                          "You are an expert admissions strategist and essay"
-                          " coach."
+                          "You are an uncompromising, elite university"
+                          " admissions director who gives brutally honest,"
+                          " zero-sugarcoat feedback."
                       ),
                   },
                   {"role": "user", "content": formatted_prompt},
@@ -1441,9 +1440,9 @@ elif app_section == "🎓 Common App Essay & Extracurricular Optimizer":
         except Exception as e:
           st.error(f"Failed to evaluate application asset: {e}")
     else:
-      st.warning("Please paste your text before running the evaluation.")
+      st.warning("Please paste your text before running the review.")
 
   if st.session_state.admission_feedback:
     st.markdown("---")
-    st.markdown("### 🏛️ Admissions Review & Feedback")
+    st.markdown("### 🏛️ Committee Review & Verdict")
     st.markdown(st.session_state.admission_feedback)
