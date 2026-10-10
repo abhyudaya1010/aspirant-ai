@@ -7,7 +7,7 @@ from datetime import date, timedelta
 from groq import Groq
 from PIL import Image
 import streamlit as st
-# Custom High-End SaaS Dark Theme Styling (Bright Sidebar Navigation Fix)
+# Custom High-End SaaS Dark Theme Styling (Ultra-Bright Sidebar Fix)
 st.markdown(
     """
     <style>
@@ -24,37 +24,37 @@ st.markdown(
         color: #f8fafc;
     }
 
-    /* Sidebar Styling & Bright Navigation Options */
+    /* Sidebar Styling */
     section[data-testid="stSidebar"] {
-        background-color: rgba(15, 23, 42, 0.95) !important;
-        border-right: 1px solid rgba(129, 140, 248, 0.2) !important;
+        background-color: #0b0f19 !important;
+        border-right: 1px solid rgba(129, 140, 248, 0.3) !important;
     }
 
-    /* Make Sidebar Selectbox / Dropdown & Menu Buttons Bright */
+    /* ULTRA-BRIGHT SIDEBAR SELECTBOX (The Navigation Menu Dropdown) */
     section[data-testid="stSidebar"] div[data-baseweb="select"] {
-        background-color: #1e1b4b !important;
-        border: 1.5px solid #6366f1 !important;
+        background: linear-gradient(135deg, #312e81 0%, #3730a3 100%) !important;
+        border: 2px solid #818cf8 !important;
         border-radius: 12px !important;
-        box-shadow: 0 0 12px rgba(99, 102, 241, 0.35) !important;
+        box-shadow: 0 0 20px rgba(129, 140, 248, 0.5) !important;
     }
 
-    section[data-testid="stSidebar"] div[data-baseweb="select"] * {
+    section[data-testid="stSidebar"] div[data-baseweb="select"] div, 
+    section[data-testid="stSidebar"] div[data-baseweb="select"] span {
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        font-size: 15px !important;
+    }
+
+    /* Sidebar Dropdown Menu Popover Options */
+    div[data-baseweb="popover"] div[role="option"] {
+        background-color: #1e1b4b !important;
         color: #ffffff !important;
         font-weight: 600 !important;
     }
 
-    section[data-testid="stSidebar"] .stButton > button {
-        background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%) !important;
+    div[data-baseweb="popover"] div[role="option"]:hover {
+        background-color: #4f46e5 !important;
         color: #ffffff !important;
-        border: 1px solid #a5b4fc !important;
-        font-weight: 700 !important;
-        box-shadow: 0 4px 16px rgba(99, 102, 241, 0.5) !important;
-    }
-
-    section[data-testid="stSidebar"] .stButton > button:hover {
-        background: linear-gradient(135deg, #818cf8 0%, #a5b4fc 100%) !important;
-        box-shadow: 0 6px 22px rgba(129, 140, 248, 0.7) !important;
-        transform: translateY(-1px);
     }
 
     /* Glassmorphism Cards & Containers */
@@ -125,7 +125,7 @@ st.markdown(
     }
 
     /* Inputs, Selectboxes, and Text Areas */
-    .stTextInput input, .stTextArea textarea, div[data-baseweb="select"] {
+    .stTextInput input, .stTextArea textarea {
         background-color: rgba(15, 23, 42, 0.6) !important;
         border: 1px solid rgba(255, 255, 255, 0.12) !important;
         border-radius: 10px !important;
