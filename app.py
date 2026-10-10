@@ -8,7 +8,7 @@ from groq import Groq
 from PIL import Image
 import streamlit as st
 # Custom High-End SaaS Dark Theme Styling (Ultra-Bright Sidebar Fix)
-st.markdown(
+st.markdown()
     """
     <style>
     /* Import Inter & JetBrains Mono Fonts */
