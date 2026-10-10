@@ -7,7 +7,7 @@ from datetime import date, timedelta
 from groq import Groq
 from PIL import Image
 import streamlit as st
-# Custom High-End SaaS Dark Theme Styling (File Uploader Fix)
+# Custom High-End SaaS Dark Theme Styling (Bright Sidebar Navigation Fix)
 st.markdown(
     """
     <style>
@@ -22,6 +22,39 @@ st.markdown(
     .stApp {
         background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #0f172a 50%, #090d16 100%);
         color: #f8fafc;
+    }
+
+    /* Sidebar Styling & Bright Navigation Options */
+    section[data-testid="stSidebar"] {
+        background-color: rgba(15, 23, 42, 0.95) !important;
+        border-right: 1px solid rgba(129, 140, 248, 0.2) !important;
+    }
+
+    /* Make Sidebar Selectbox / Dropdown & Menu Buttons Bright */
+    section[data-testid="stSidebar"] div[data-baseweb="select"] {
+        background-color: #1e1b4b !important;
+        border: 1.5px solid #6366f1 !important;
+        border-radius: 12px !important;
+        box-shadow: 0 0 12px rgba(99, 102, 241, 0.35) !important;
+    }
+
+    section[data-testid="stSidebar"] div[data-baseweb="select"] * {
+        color: #ffffff !important;
+        font-weight: 600 !important;
+    }
+
+    section[data-testid="stSidebar"] .stButton > button {
+        background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%) !important;
+        color: #ffffff !important;
+        border: 1px solid #a5b4fc !important;
+        font-weight: 700 !important;
+        box-shadow: 0 4px 16px rgba(99, 102, 241, 0.5) !important;
+    }
+
+    section[data-testid="stSidebar"] .stButton > button:hover {
+        background: linear-gradient(135deg, #818cf8 0%, #a5b4fc 100%) !important;
+        box-shadow: 0 6px 22px rgba(129, 140, 248, 0.7) !important;
+        transform: translateY(-1px);
     }
 
     /* Glassmorphism Cards & Containers */
@@ -41,13 +74,7 @@ st.markdown(
         transform: translateY(-2px);
     }
 
-    /* Sidebar Styling */
-    section[data-testid="stSidebar"] {
-        background-color: rgba(15, 23, 42, 0.8) !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
-    }
-
-    /* Standard SaaS Buttons */
+    /* Main Area Buttons */
     .stButton > button {
         background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
         color: #ffffff !important;
@@ -67,10 +94,10 @@ st.markdown(
         background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%) !important;
     }
 
-    /* File Uploader Fix: Dark Theme Dropzone & High-Contrast Button Text */
+    /* File Uploader Fix */
     div[data-testid="stFileUploader"] {
         background-color: rgba(15, 23, 42, 0.6) !important;
-        border: 1px stroke rgba(255, 255, 255, 0.15) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
         border-radius: 12px !important;
         padding: 12px !important;
     }
@@ -79,11 +106,6 @@ st.markdown(
         background-color: rgba(30, 41, 59, 0.5) !important;
         border: 2px dashed rgba(129, 140, 248, 0.4) !important;
         border-radius: 10px !important;
-    }
-
-    div[data-testid="stFileUploader"] section:hover {
-        border-color: #818cf8 !important;
-        background-color: rgba(49, 46, 129, 0.3) !important;
     }
 
     div[data-testid="stFileUploader"] label, 
@@ -100,11 +122,6 @@ st.markdown(
         border: 1px solid rgba(129, 140, 248, 0.5) !important;
         border-radius: 8px !important;
         font-weight: 600 !important;
-    }
-
-    div[data-testid="stFileUploader"] button:hover {
-        background-color: #4338ca !important;
-        color: #ffffff !important;
     }
 
     /* Inputs, Selectboxes, and Text Areas */
@@ -142,7 +159,6 @@ st.markdown(
         letter-spacing: -0.5px !important;
     }
 
-    /* Subheaders with Subtle Glow */
     .stSubheader {
         background: linear-gradient(90deg, #818cf8, #c084fc);
         -webkit-background-clip: text;
