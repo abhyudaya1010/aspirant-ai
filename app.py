@@ -7,17 +7,7 @@ from datetime import date, timedelta
 from groq import Groq
 from PIL import Image
 import streamlit as st
-# ==========================================
-# PAGE CONFIGURATION & AESTHETIC STYLING
-# ==========================================
-st.set_page_config(
-    page_title="Aspirant AI — Modern STEM & Admissions Platform",
-    page_icon="🎓",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-
-# Custom High-End SaaS Dark Theme Styling
+# Custom High-End SaaS Dark Theme Styling (File Uploader Fix)
 st.markdown(
     """
     <style>
@@ -57,7 +47,7 @@ st.markdown(
         border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
     }
 
-    /* Modern SaaS Buttons */
+    /* Standard SaaS Buttons */
     .stButton > button {
         background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
         color: #ffffff !important;
@@ -75,6 +65,46 @@ st.markdown(
         transform: translateY(-1px) scale(1.02) !important;
         box-shadow: 0 6px 20px 0 rgba(99, 102, 241, 0.55) !important;
         background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%) !important;
+    }
+
+    /* File Uploader Fix: Dark Theme Dropzone & High-Contrast Button Text */
+    div[data-testid="stFileUploader"] {
+        background-color: rgba(15, 23, 42, 0.6) !important;
+        border: 1px stroke rgba(255, 255, 255, 0.15) !important;
+        border-radius: 12px !important;
+        padding: 12px !important;
+    }
+
+    div[data-testid="stFileUploader"] section {
+        background-color: rgba(30, 41, 59, 0.5) !important;
+        border: 2px dashed rgba(129, 140, 248, 0.4) !important;
+        border-radius: 10px !important;
+    }
+
+    div[data-testid="stFileUploader"] section:hover {
+        border-color: #818cf8 !important;
+        background-color: rgba(49, 46, 129, 0.3) !important;
+    }
+
+    div[data-testid="stFileUploader"] label, 
+    div[data-testid="stFileUploader"] span, 
+    div[data-testid="stFileUploader"] p,
+    div[data-testid="stFileUploader"] small {
+        color: #f1f5f9 !important;
+        font-weight: 500 !important;
+    }
+
+    div[data-testid="stFileUploader"] button {
+        background-color: #312e81 !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(129, 140, 248, 0.5) !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+    }
+
+    div[data-testid="stFileUploader"] button:hover {
+        background-color: #4338ca !important;
+        color: #ffffff !important;
     }
 
     /* Inputs, Selectboxes, and Text Areas */
@@ -121,6 +151,7 @@ st.markdown(
     </style>
     """,
     unsafe_allow_html=True,
+)
 )
 
 
