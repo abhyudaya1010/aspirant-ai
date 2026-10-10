@@ -7,9 +7,18 @@ from datetime import date, timedelta
 from groq import Groq
 from PIL import Image
 import streamlit as st
-# Custom High-End SaaS Dark Theme Styling (Ultra-Bright Sidebar Fix)
-st.markdown()
-    
+# ==========================================
+# PAGE CONFIG & ULTRA-BRIGHT AESTHETIC STYLING
+# ==========================================
+st.set_page_config(
+    page_title="Aspirant AI — Modern STEM & Admissions Platform",
+    page_icon="🎓",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+st.markdown(
+    """
     <style>
     /* Import Inter & JetBrains Mono Fonts */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
@@ -24,13 +33,52 @@ st.markdown()
         color: #f8fafc;
     }
 
-    /* Sidebar Styling */
+    /* Sidebar Base Styling */
     section[data-testid="stSidebar"] {
         background-color: #0b0f19 !important;
         border-right: 1px solid rgba(129, 140, 248, 0.3) !important;
     }
 
-    /* ULTRA-BRIGHT SIDEBAR SELECTBOX (The Navigation Menu Dropdown) */
+    /* ULTRA-BRIGHT SIDEBAR FEATURE NAVIGATION BUTTONS (Radio Group / Selectors) */
+    section[data-testid="stSidebar"] div[role="radiogroup"] {
+        gap: 10px !important;
+    }
+
+    section[data-testid="stSidebar"] div[role="radiogroup"] > label {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.35) 0%, rgba(168, 85, 247, 0.35) 100%) !important;
+        border: 1.5px solid #818cf8 !important;
+        border-radius: 12px !important;
+        padding: 12px 18px !important;
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35) !important;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    /* Text & Icon Brightness inside Feature Buttons */
+    section[data-testid="stSidebar"] div[role="radiogroup"] > label span,
+    section[data-testid="stSidebar"] div[role="radiogroup"] > label p {
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        font-size: 15px !important;
+        letter-spacing: 0.2px !important;
+        text-shadow: 0 0 10px rgba(255, 255, 255, 0.4) !important;
+    }
+
+    /* Hover State for Feature Buttons */
+    section[data-testid="stSidebar"] div[role="radiogroup"] > label:hover {
+        background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%) !important;
+        border-color: #c084fc !important;
+        box-shadow: 0 6px 22px rgba(168, 85, 247, 0.6) !important;
+        transform: translateY(-2px) scale(1.02) !important;
+    }
+
+    /* Currently Selected Active Feature Button */
+    section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="true"] {
+        background: linear-gradient(135deg, #4f46e5 0%, #9333ea 100%) !important;
+        border: 2px solid #38bdf8 !important;
+        box-shadow: 0 0 25px rgba(56, 189, 248, 0.8) !important;
+    }
+
+    /* Sidebar Dropdown Selectbox Option (If using Selectbox navigation) */
     section[data-testid="stSidebar"] div[data-baseweb="select"] {
         background: linear-gradient(135deg, #312e81 0%, #3730a3 100%) !important;
         border: 2px solid #818cf8 !important;
@@ -43,18 +91,6 @@ st.markdown()
         color: #ffffff !important;
         font-weight: 700 !important;
         font-size: 15px !important;
-    }
-
-    /* Sidebar Dropdown Menu Popover Options */
-    div[data-baseweb="popover"] div[role="option"] {
-        background-color: #1e1b4b !important;
-        color: #ffffff !important;
-        font-weight: 600 !important;
-    }
-
-    div[data-baseweb="popover"] div[role="option"]:hover {
-        background-color: #4f46e5 !important;
-        color: #ffffff !important;
     }
 
     /* Glassmorphism Cards & Containers */
@@ -137,21 +173,6 @@ st.markdown()
         box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.25) !important;
     }
 
-    /* Radio Options & Custom Cards */
-    div[role="radiogroup"] > label {
-        background: rgba(30, 41, 59, 0.3) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        border-radius: 10px !important;
-        padding: 10px 16px !important;
-        margin-bottom: 8px !important;
-        transition: all 0.2s ease !important;
-    }
-
-    div[role="radiogroup"] > label:hover {
-        border-color: rgba(129, 140, 248, 0.5) !important;
-        background: rgba(49, 46, 129, 0.3) !important;
-    }
-
     /* Headings & Accent Color */
     h1, h2, h3 {
         color: #ffffff !important;
@@ -163,50 +184,6 @@ st.markdown()
         background: linear-gradient(90deg, #818cf8, #c084fc);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-    }
-    </style>
-    """,
- # Insert this updated style block into your app.py
-st.markdown(
-    """
-    <style>
-    /* ULTRA-BRIGHT SIDEBAR NAVIGATION BUTTONS */
-    section[data-testid="stSidebar"] div[role="radiogroup"] {
-        gap: 8px !important;
-    }
-
-    section[data-testid="stSidebar"] div[role="radiogroup"] > label {
-        background: linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(168, 85, 247, 0.25) 100%) !important;
-        border: 1.5px solid #818cf8 !important;
-        border-radius: 12px !important;
-        padding: 12px 18px !important;
-        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3) !important;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    }
-
-    /* Text & Icon Brightness inside Navigation Buttons */
-    section[data-testid="stSidebar"] div[role="radiogroup"] > label span,
-    section[data-testid="stSidebar"] div[role="radiogroup"] > label p {
-        color: #ffffff !important;
-        font-weight: 700 !important;
-        font-size: 15px !important;
-        letter-spacing: 0.2px !important;
-        text-shadow: 0 0 10px rgba(255, 255, 255, 0.3) !important;
-    }
-
-    /* Active & Hover Glow States */
-    section[data-testid="stSidebar"] div[role="radiogroup"] > label:hover {
-        background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%) !important;
-        border-color: #c084fc !important;
-        box-shadow: 0 6px 22px rgba(168, 85, 247, 0.6) !important;
-        transform: translateY(-2px) scale(1.02) !important;
-    }
-
-    /* Selected Active Button */
-    section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="true"] {
-        background: linear-gradient(135deg, #4f46e5 0%, #9333ea 100%) !important;
-        border: 2px solid #38bdf8 !important;
-        box-shadow: 0 0 25px rgba(56, 189, 248, 0.7) !important;
     }
     </style>
     """,
