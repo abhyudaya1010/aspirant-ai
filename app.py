@@ -9,7 +9,7 @@ from PIL import Image
 import streamlit as st
 # Custom High-End SaaS Dark Theme Styling (Ultra-Bright Sidebar Fix)
 st.markdown()
-    """
+    
     <style>
     /* Import Inter & JetBrains Mono Fonts */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
