@@ -166,9 +166,52 @@ st.markdown(
     }
     </style>
     """,
+ # Insert this updated style block into your app.py
+st.markdown(
+    """
+    <style>
+    /* ULTRA-BRIGHT SIDEBAR NAVIGATION BUTTONS */
+    section[data-testid="stSidebar"] div[role="radiogroup"] {
+        gap: 8px !important;
+    }
+
+    section[data-testid="stSidebar"] div[role="radiogroup"] > label {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(168, 85, 247, 0.25) 100%) !important;
+        border: 1.5px solid #818cf8 !important;
+        border-radius: 12px !important;
+        padding: 12px 18px !important;
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3) !important;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    /* Text & Icon Brightness inside Navigation Buttons */
+    section[data-testid="stSidebar"] div[role="radiogroup"] > label span,
+    section[data-testid="stSidebar"] div[role="radiogroup"] > label p {
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        font-size: 15px !important;
+        letter-spacing: 0.2px !important;
+        text-shadow: 0 0 10px rgba(255, 255, 255, 0.3) !important;
+    }
+
+    /* Active & Hover Glow States */
+    section[data-testid="stSidebar"] div[role="radiogroup"] > label:hover {
+        background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%) !important;
+        border-color: #c084fc !important;
+        box-shadow: 0 6px 22px rgba(168, 85, 247, 0.6) !important;
+        transform: translateY(-2px) scale(1.02) !important;
+    }
+
+    /* Selected Active Button */
+    section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="true"] {
+        background: linear-gradient(135deg, #4f46e5 0%, #9333ea 100%) !important;
+        border: 2px solid #38bdf8 !important;
+        box-shadow: 0 0 25px rgba(56, 189, 248, 0.7) !important;
+    }
+    </style>
+    """,
     unsafe_allow_html=True,
 )
-
 # ==========================================
 # LATEX FORMATTING HELPER
 # ==========================================
