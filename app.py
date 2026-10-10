@@ -7,108 +7,121 @@ from datetime import date, timedelta
 from groq import Groq
 from PIL import Image
 import streamlit as st
-
 # ==========================================
-# PAGE CONFIGURATION & CUSTOM DESIGN SYSTEM
+# PAGE CONFIGURATION & AESTHETIC STYLING
 # ==========================================
 st.set_page_config(
-    page_title="Aspirant AI — Harvard-Tier Study Companion",
+    page_title="Aspirant AI — Modern STEM & Admissions Platform",
     page_icon="🎓",
     layout="wide",
+    initial_sidebar_state="expanded",
 )
 
-st.markdown("""
-<style>
-    /* Global Theme & Background */
-    .main {
-        background: #090D16;
-        color: #F1F5F9;
+# Custom High-End SaaS Dark Theme Styling
+st.markdown(
+    """
+    <style>
+    /* Import Inter & JetBrains Mono Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    html, body, [class*="css"] {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
-    
-    /* App Header Banner */
-    .app-header {
-        background: linear-gradient(135deg, #1E1B4B 0%, #0F172A 50%, #020617 100%);
-        padding: 2.5rem 3rem;
-        border-radius: 16px;
-        color: white;
-        margin-bottom: 2rem;
-        border: 1px solid #312E81;
-        box-shadow: 0 10px 25px -5px rgba(30, 27, 75, 0.4);
+
+    /* Gradient Background Effect */
+    .stApp {
+        background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #0f172a 50%, #090d16 100%);
+        color: #f8fafc;
     }
-    .app-header h1 {
-        font-size: 2.5rem;
-        font-weight: 800;
-        margin-bottom: 0.5rem;
-        background: linear-gradient(90deg, #818CF8 0%, #C084FC 100%);
+
+    /* Glassmorphism Cards & Containers */
+    div[data-testid="stMetric"], .stCard, div[data-testid="stExpander"] {
+        background: rgba(30, 41, 59, 0.4) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 16px !important;
+        padding: 18px !important;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37) !important;
+        transition: all 0.3s ease-in-out !important;
+    }
+
+    div[data-testid="stMetric"]:hover, div[data-testid="stExpander"]:hover {
+        border-color: rgba(99, 102, 241, 0.4) !important;
+        transform: translateY(-2px);
+    }
+
+    /* Sidebar Styling */
+    section[data-testid="stSidebar"] {
+        background-color: rgba(15, 23, 42, 0.8) !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+
+    /* Modern SaaS Buttons */
+    .stButton > button {
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+        color: #ffffff !important;
+        border: none !important;
+        border-radius: 10px !important;
+        font-weight: 600 !important;
+        font-size: 14px !important;
+        padding: 10px 24px !important;
+        letter-spacing: 0.3px !important;
+        box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.39) !important;
+        transition: all 0.2s ease-in-out !important;
+    }
+
+    .stButton > button:hover {
+        transform: translateY(-1px) scale(1.02) !important;
+        box-shadow: 0 6px 20px 0 rgba(99, 102, 241, 0.55) !important;
+        background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%) !important;
+    }
+
+    /* Inputs, Selectboxes, and Text Areas */
+    .stTextInput input, .stTextArea textarea, div[data-baseweb="select"] {
+        background-color: rgba(15, 23, 42, 0.6) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        border-radius: 10px !important;
+        color: #f1f5f9 !important;
+    }
+
+    .stTextInput input:focus, .stTextArea textarea:focus {
+        border-color: #818cf8 !important;
+        box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.25) !important;
+    }
+
+    /* Radio Options & Custom Cards */
+    div[role="radiogroup"] > label {
+        background: rgba(30, 41, 59, 0.3) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 10px !important;
+        padding: 10px 16px !important;
+        margin-bottom: 8px !important;
+        transition: all 0.2s ease !important;
+    }
+
+    div[role="radiogroup"] > label:hover {
+        border-color: rgba(129, 140, 248, 0.5) !important;
+        background: rgba(49, 46, 129, 0.3) !important;
+    }
+
+    /* Headings & Accent Color */
+    h1, h2, h3 {
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        letter-spacing: -0.5px !important;
+    }
+
+    /* Subheaders with Subtle Glow */
+    .stSubheader {
+        background: linear-gradient(90deg, #818cf8, #c084fc);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        letter-spacing: -0.03em;
     }
-    .app-header p {
-        color: #94A3B8;
-        font-size: 1.15rem;
-        margin-bottom: 0;
-        font-weight: 400;
-    }
-
-    /* Section Headers */
-    h2, h3 {
-        color: #F8FAFC !important;
-        font-weight: 700;
-        letter-spacing: -0.02em;
-    }
-
-    /* Custom Buttons */
-    .stButton > button {
-        background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
-        color: white;
-        border-radius: 10px;
-        font-weight: 600;
-        padding: 0.65rem 1.4rem;
-        border: none;
-        transition: all 0.25s ease-in-out;
-        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
-    }
-    .stButton > button:hover {
-        background: linear-gradient(135deg, #4338CA 0%, #4F46E5 100%);
-        box-shadow: 0 6px 16px rgba(79, 70, 229, 0.5);
-        transform: translateY(-1px);
-    }
-
-    /* Sidebar Customization */
-    section[data-testid="stSidebar"] {
-        background-color: #030712;
-        border-right: 1px solid #1E293B;
-    }
-    section[data-testid="stSidebar"] .stRadio label {
-        color: #CBD5E1 !important;
-        font-weight: 500;
-    }
-    section[data-testid="stSidebar"] h3 {
-        color: #818CF8 !important;
-        font-size: 0.95rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-
-    /* Cards / Containers */
-    div.stContainer, .streamlit-expanderHeader {
-        background: #0F172A;
-        padding: 1.25rem;
-        border-radius: 12px;
-        border: 1px solid #1E293B;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
-        margin-bottom: 1rem;
-    }
-    
-    /* Metrics & Badges */
-    [data-testid="stMetricValue"] {
-        color: #818CF8 !important;
-        font-weight: 700;
-    }
-</style>
-""", unsafe_allow_html=True)
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 
 # ==========================================
