@@ -7,188 +7,47 @@ from datetime import date, timedelta
 from groq import Groq
 from PIL import Image
 import streamlit as st
-# ==========================================
-# PAGE CONFIG & ULTRA-BRIGHT AESTHETIC STYLING
-# ==========================================
-st.set_page_config(
-    page_title="Aspirant AI — Modern STEM & Admissions Platform",
-    page_icon="🎓",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
 
-st.markdown(
-    """
-    <style>
-    /* Import Inter & JetBrains Mono Fonts */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-
-    html, body, [class*="css"] {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    }
-
-    /* Gradient Background Effect */
+st.markdown("""
+<style>
+    /* Main App Background */
     .stApp {
-        background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #0f172a 50%, #090d16 100%);
-        color: #f8fafc;
+        background: linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%) !important;
+        color: #0F172A !important;
+    }
+    
+    /* Clean Light Cards / Containers */
+    div[data-testid="stVerticalBlock"] > div {
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        border-radius: 12px;
+        padding: 1rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     }
 
-    /* Sidebar Base Styling */
-    section[data-testid="stSidebar"] {
-        background-color: #0b0f19 !important;
-        border-right: 1px solid rgba(129, 140, 248, 0.3) !important;
-    }
-
-    /* ULTRA-BRIGHT SIDEBAR FEATURE NAVIGATION BUTTONS (Radio Group / Selectors) */
-    section[data-testid="stSidebar"] div[role="radiogroup"] {
-        gap: 10px !important;
-    }
-
-    section[data-testid="stSidebar"] div[role="radiogroup"] > label {
-        background: linear-gradient(135deg, rgba(99, 102, 241, 0.35) 0%, rgba(168, 85, 247, 0.35) 100%) !important;
-        border: 1.5px solid #818cf8 !important;
-        border-radius: 12px !important;
-        padding: 12px 18px !important;
-        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35) !important;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    }
-
-    /* Text & Icon Brightness inside Feature Buttons */
-    section[data-testid="stSidebar"] div[role="radiogroup"] > label span,
-    section[data-testid="stSidebar"] div[role="radiogroup"] > label p {
-        color: #ffffff !important;
-        font-weight: 700 !important;
-        font-size: 15px !important;
-        letter-spacing: 0.2px !important;
-        text-shadow: 0 0 10px rgba(255, 255, 255, 0.4) !important;
-    }
-
-    /* Hover State for Feature Buttons */
-    section[data-testid="stSidebar"] div[role="radiogroup"] > label:hover {
-        background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%) !important;
-        border-color: #c084fc !important;
-        box-shadow: 0 6px 22px rgba(168, 85, 247, 0.6) !important;
-        transform: translateY(-2px) scale(1.02) !important;
-    }
-
-    /* Currently Selected Active Feature Button */
-    section[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="true"] {
-        background: linear-gradient(135deg, #4f46e5 0%, #9333ea 100%) !important;
-        border: 2px solid #38bdf8 !important;
-        box-shadow: 0 0 25px rgba(56, 189, 248, 0.8) !important;
-    }
-
-    /* Sidebar Dropdown Selectbox Option (If using Selectbox navigation) */
-    section[data-testid="stSidebar"] div[data-baseweb="select"] {
-        background: linear-gradient(135deg, #312e81 0%, #3730a3 100%) !important;
-        border: 2px solid #818cf8 !important;
-        border-radius: 12px !important;
-        box-shadow: 0 0 20px rgba(129, 140, 248, 0.5) !important;
-    }
-
-    section[data-testid="stSidebar"] div[data-baseweb="select"] div, 
-    section[data-testid="stSidebar"] div[data-baseweb="select"] span {
-        color: #ffffff !important;
-        font-weight: 700 !important;
-        font-size: 15px !important;
-    }
-
-    /* Glassmorphism Cards & Containers */
-    div[data-testid="stMetric"], .stCard, div[data-testid="stExpander"] {
-        background: rgba(30, 41, 59, 0.4) !important;
-        backdrop-filter: blur(12px) !important;
-        -webkit-backdrop-filter: blur(12px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        border-radius: 16px !important;
-        padding: 18px !important;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37) !important;
-        transition: all 0.3s ease-in-out !important;
-    }
-
-    div[data-testid="stMetric"]:hover, div[data-testid="stExpander"]:hover {
-        border-color: rgba(99, 102, 241, 0.4) !important;
-        transform: translateY(-2px);
-    }
-
-    /* Main Area Buttons */
-    .stButton > button {
-        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
-        color: #ffffff !important;
-        border: none !important;
-        border-radius: 10px !important;
-        font-weight: 600 !important;
-        font-size: 14px !important;
-        padding: 10px 24px !important;
-        letter-spacing: 0.3px !important;
-        box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.39) !important;
-        transition: all 0.2s ease-in-out !important;
-    }
-
-    .stButton > button:hover {
-        transform: translateY(-1px) scale(1.02) !important;
-        box-shadow: 0 6px 20px 0 rgba(99, 102, 241, 0.55) !important;
-        background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%) !important;
-    }
-
-    /* File Uploader Fix */
-    div[data-testid="stFileUploader"] {
-        background-color: rgba(15, 23, 42, 0.6) !important;
-        border: 1px solid rgba(255, 255, 255, 0.15) !important;
-        border-radius: 12px !important;
-        padding: 12px !important;
-    }
-
-    div[data-testid="stFileUploader"] section {
-        background-color: rgba(30, 41, 59, 0.5) !important;
-        border: 2px dashed rgba(129, 140, 248, 0.4) !important;
-        border-radius: 10px !important;
-    }
-
-    div[data-testid="stFileUploader"] label, 
-    div[data-testid="stFileUploader"] span, 
-    div[data-testid="stFileUploader"] p,
-    div[data-testid="stFileUploader"] small {
-        color: #f1f5f9 !important;
-        font-weight: 500 !important;
-    }
-
-    div[data-testid="stFileUploader"] button {
-        background-color: #312e81 !important;
-        color: #ffffff !important;
-        border: 1px solid rgba(129, 140, 248, 0.5) !important;
+    /* Modern Buttons */
+    .stButton>button {
+        background-color: #2563EB !important;
+        color: #FFFFFF !important;
         border-radius: 8px !important;
+        border: none !important;
         font-weight: 600 !important;
     }
-
-    /* Inputs, Selectboxes, and Text Areas */
-    .stTextInput input, .stTextArea textarea {
-        background-color: rgba(15, 23, 42, 0.6) !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
-        border-radius: 10px !important;
-        color: #f1f5f9 !important;
+    .stButton>button:hover {
+        background-color: #1D4ED8 !important;
+        color: #FFFFFF !important;
     }
 
-    .stTextInput input:focus, .stTextArea textarea:focus {
-        border-color: #818cf8 !important;
-        box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.25) !important;
+    /* Text Inputs and Text Areas */
+    .stTextInput>div>div>input, .stTextArea>div>div>textarea {
+        background-color: #FFFFFF !important;
+        color: #0F172A !important;
+        border: 1px solid #CBD5E1 !important;
+        border-radius: 8px !important;
     }
-
-    /* Headings & Accent Color */
-    h1, h2, h3 {
-        color: #ffffff !important;
-        font-weight: 700 !important;
-        letter-spacing: -0.5px !important;
-    }
-
-    .stSubheader {
-        background: linear-gradient(90deg, #818cf8, #c084fc);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+</style>
+""", unsafe_allow_html=True
+  )
 # ==========================================
 # LATEX FORMATTING HELPER
 # ==========================================
