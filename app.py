@@ -8,46 +8,99 @@ from groq import Groq
 from PIL import Image
 import streamlit as st
 
+# Inject Custom SaaS Light Glassmorphism CSS
 st.markdown("""
 <style>
-    /* Main App Background */
+    /* Google Fonts Import */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    html, body, [class*="css"] {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    }
+
+    /* Main App Background - Soft Atmospheric Gradient */
     .stApp {
-        background: linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%) !important;
+        background: radial-gradient(circle at 10% 20%, rgba(238, 242, 255, 0.8) 0%, rgba(248, 250, 252, 1) 90%) !important;
         color: #0F172A !important;
     }
-    
-    /* Clean Light Cards / Containers */
-    div[data-testid="stVerticalBlock"] > div {
-        background: rgba(255, 255, 255, 0.85);
-        border: 1px solid rgba(226, 232, 240, 0.8);
-        border-radius: 12px;
-        padding: 1rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+
+    /* Modern Glassmorphic Cards */
+    div[data-testid="stVerticalBlock"] > div[data-testid="stBlock"] {
+        background: rgba(255, 255, 255, 0.75) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        border: 1px solid rgba(226, 232, 240, 0.8) !important;
+        border-radius: 16px !important;
+        padding: 1.5rem !important;
+        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.03), 0 8px 10px -6px rgba(15, 23, 42, 0.02) !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
-    /* Modern Buttons */
-    .stButton>button {
-        background-color: #2563EB !important;
+    div[data-testid="stVerticalBlock"] > div[data-testid="stBlock"]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 20px 30px -10px rgba(37, 99, 235, 0.08) !important;
+        border-color: rgba(191, 219, 254, 0.9) !important;
+    }
+
+    /* Primary Gradient Buttons */
+    .stButton > button {
+        background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%) !important;
         color: #FFFFFF !important;
-        border-radius: 8px !important;
+        border-radius: 10px !important;
         border: none !important;
+        padding: 0.6rem 1.4rem !important;
         font-weight: 600 !important;
-    }
-    .stButton>button:hover {
-        background-color: #1D4ED8 !important;
-        color: #FFFFFF !important;
+        letter-spacing: -0.01em !important;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25) !important;
+        transition: all 0.2s ease !important;
     }
 
-    /* Text Inputs and Text Areas */
-    .stTextInput>div>div>input, .stTextArea>div>div>textarea {
+    .stButton > button:hover {
+        background: linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%) !important;
+        box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35) !important;
+        transform: translateY(-1px);
+    }
+
+    /* Inputs & Textarea - Clean Elevated Look */
+    .stTextInput > div > div > input, 
+    .stTextArea > div > div > textarea, 
+    .stSelectbox > div > div {
         background-color: #FFFFFF !important;
         color: #0F172A !important;
-        border: 1px solid #CBD5E1 !important;
-        border-radius: 8px !important;
+        border: 1px solid #E2E8F0 !important;
+        border-radius: 10px !important;
+        padding: 0.75rem 1rem !important;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+    }
+
+    .stTextInput > div > div > input:focus, 
+    .stTextArea > div > div > textarea:focus {
+        border-color: #2563EB !important;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+    }
+
+    /* Sidebar Customization */
+    section[data-testid="stSidebar"] {
+        background-color: #FFFFFF !important;
+        border-right: 1px solid #E2E8F0 !important;
+    }
+
+    /* Custom Header Pills / Badges */
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #2563EB;
+        background: #EFF6FF;
+        border: 1px solid #DBEAFE;
+        border-radius: 9999px;
+        margin-bottom: 0.75rem;
     }
 </style>
 """, unsafe_allow_html=True
-  )
+)
 # ==========================================
 # LATEX FORMATTING HELPER
 # ==========================================
